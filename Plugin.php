@@ -32,7 +32,9 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
      * @return void
      * @throws Typecho_Plugin_Exception
      */
-    public static function deactivate(){}
+    public static function deactivate(){
+	    Helper::removeRoute('BaiduSubmit');
+    }
 
     /**
      * 获取插件配置面板
