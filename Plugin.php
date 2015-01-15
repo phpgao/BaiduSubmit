@@ -20,7 +20,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     {
 
         Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
-        Helper::addRoute('BaiduSubmit', 'checksign.php', 'BaiduSubmit_Action', 'action');
+        Helper::addRoute('BaiduSubmit', '/checksign.php', 'BaiduSubmit_Action', 'action');
         return "安装成功！";
     }
 
