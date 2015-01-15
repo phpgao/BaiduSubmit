@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 百度结构化插件
  *
@@ -32,8 +33,9 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
      * @return void
      * @throws Typecho_Plugin_Exception
      */
-    public static function deactivate(){
-	    Helper::removeRoute('BaiduSubmit');
+    public static function deactivate()
+    {
+        Helper::removeRoute('BaiduSubmit');
     }
 
     /**
@@ -50,7 +52,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         $form->addInput($checksign);
 
 
-        $renew = new Typecho_Widget_Helper_Form_Element_Checkbox('renew', array(0=>'更新'), '', _t('是否更新checksign'));
+        $renew = new Typecho_Widget_Helper_Form_Element_Checkbox('renew', array(0 => '更新'), '', _t('是否更新checksign'));
         $form->addInput($renew);
 
 
@@ -67,8 +69,9 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
      * @param Typecho_Widget_Helper_Form $form
      * @return void
      */
-    public static function personalConfig(Typecho_Widget_Helper_Form $form){}
-
+    public static function personalConfig(Typecho_Widget_Helper_Form $form)
+    {
+    }
 
 
     public static function render()
@@ -77,13 +80,14 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     }
 
 
-    public static function configHandle($config, $is_init){
+    public static function configHandle($config, $is_init)
+    {
 
 
         //获取预定义常量
         //使用
-        $const_file = dirname(__FILE__).DIRECTORY_SEPARATOR.'inc'.DIRECTORY_SEPARATOR.'const.php';
-        require dirname(__FILE__).DIRECTORY_SEPARATOR.'inc'.DIRECTORY_SEPARATOR.'sitemap.php';
+        $const_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'inc' . DIRECTORY_SEPARATOR . 'const.php';
+        require dirname(__FILE__) . DIRECTORY_SEPARATOR . 'inc' . DIRECTORY_SEPARATOR . 'sitemap.php';
         //获取系统配置
         $options = Typecho_Widget::widget('Widget_Options');
         $site_url = $options->siteUrl;
@@ -91,7 +95,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         //dump($options);
 
         //如果更新或者初始化
-        if(!is_null($config['renew']) || $is_init){
+        if (!is_null($config['renew']) || $is_init) {
 
             //$curl = new Typecho_Http_Client_Adapter_Curl();
             //获取checksign
@@ -102,30 +106,27 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
             $data = json_decode($res);
 
-            if(isset($data->status) && 0 != $data->status){
+            if (isset($data->status) && 0 != $data->status) {
                 $config['checksign'] = '';
-            }else{
+            } else {
                 $config['checksign'] = $data->checksign;
             }
 
-            $url = $site_url .'checksign.php?checksign='.$config['checksign'];
+            $url = $site_url . 'checksign.php?checksign=' . $config['checksign'];
 
             $sigurl = $config_from_file['zzplatform'] . '/auth?checksign=' . $config['checksign'] . '&checkurl=' . urlencode($url) . '&siteurl=' . urlencode($site_url);
-            echo $url;
-            echo "<br>";
-            echo $sigurl;
-            echo "<br>";
-            $a = file_get_contents($sigurl);
 
-            dump($a);
-            die;
+            $a = file_get_contents($sigurl);
+            file_put_contents("/tmp/baidu.log", $url . "\n" . $sigurl . "\n" . $a . "\n");
+            Widget_Plugins_Edit::configPlugin('BaiduSubmit', $config);
+
+
         }
 
         unset($config['renew']);
 
         //保存设置
         Widget_Plugins_Edit::configPlugin('BaiduSubmit', $config);
-
 
 
     }
