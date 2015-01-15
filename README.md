@@ -1,0 +1,2 @@
+# BaiduSitemap
+A typecho plugin
