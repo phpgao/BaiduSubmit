@@ -21,6 +21,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     {
 
         Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
+        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Plugin', 'send_xml');
         Helper::addRoute('BaiduSubmit', '/checksign/', 'BaiduSubmit_Action', 'action');
         return "安装成功！";
     }
@@ -76,6 +77,11 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     {
     }
 
+
+    public static function send_xml(){
+        dump(func_get_args());
+        die;
+    }
 
     public static function render()
     {
