@@ -116,9 +116,11 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
             $sigurl = $config_from_file['zzplatform'] . '/auth?checksign=' . $config['checksign'] . '&checkurl=' . urlencode($url) . '&siteurl=' . urlencode($site_url);
 
-            $a = file_get_contents($sigurl);
-            file_put_contents("/tmp/baidu.log", $url . "\n" . $sigurl . "\n" . $a . "\n", FILE_APPEND);
-            $config[''] =
+            $token_json = file_get_contents($sigurl);
+
+            $token = json_decode($token_json)->token;
+
+            $config['token'] = $token;
             Widget_Plugins_Edit::configPlugin('BaiduSubmit', $config);
 
 
