@@ -1,0 +1,10 @@
+*.mdb  
+*.ldb  
+*.sln
+*.config
+Debug/
+Release/
+obj/
+config.inc.php
+.idea/*
+*.pyc
