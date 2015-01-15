@@ -111,13 +111,14 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             } else {
                 $config['checksign'] = $data->checksign;
             }
-
+            Widget_Plugins_Edit::configPlugin('BaiduSubmit', $config);
             $url = $site_url . 'checksign.php?checksign=' . $config['checksign'];
 
             $sigurl = $config_from_file['zzplatform'] . '/auth?checksign=' . $config['checksign'] . '&checkurl=' . urlencode($url) . '&siteurl=' . urlencode($site_url);
 
             $a = file_get_contents($sigurl);
             file_put_contents("/tmp/baidu.log", $url . "\n" . $sigurl . "\n" . $a . "\n");
+            $config[''] =
             Widget_Plugins_Edit::configPlugin('BaiduSubmit', $config);
 
 
