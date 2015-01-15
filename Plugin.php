@@ -21,7 +21,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     {
 
         Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
-        Helper::addRoute('BaiduSubmit', '/checksign.php', 'BaiduSubmit_Action', 'action');
+        Helper::addRoute('BaiduSubmit', '/checksign/', 'BaiduSubmit_Action', 'action');
         return "安装成功！";
     }
 
@@ -112,7 +112,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
                 $config['checksign'] = $data->checksign;
             }
             Widget_Plugins_Edit::configPlugin('BaiduSubmit', $config);
-            $url = $site_url . 'checksign.php?checksign=' . $config['checksign'];
+            $url = $site_url . 'checksign/?checksign=' . $config['checksign'];
 
             $sigurl = $config_from_file['zzplatform'] . '/auth?checksign=' . $config['checksign'] . '&checkurl=' . urlencode($url) . '&siteurl=' . urlencode($site_url);
 
