@@ -48,8 +48,11 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     public static function config(Typecho_Widget_Helper_Form $form)
     {
 
-        $checksign = new Typecho_Widget_Helper_Form_Element_Text('checksign', array('如果你看景这句话，请更新'), '', _t('如果不知道这个是什么，请勿更改！'));
+        $checksign = new Typecho_Widget_Helper_Form_Element_Text('checksign', array('如果你看景这句话，请更新'), '', _t('checksign如果不知道这个是什么，请勿更改！'));
         $form->addInput($checksign);
+
+        $token = new Typecho_Widget_Helper_Form_Element_Text('token', array('如果你看景这句话，请更新'), '', _t('token如果不知道这个是什么，请勿更改！'));
+        $form->addInput($token);
 
 
         $renew = new Typecho_Widget_Helper_Form_Element_Checkbox('renew', array(0 => '更新'), '', _t('是否更新checksign'));
