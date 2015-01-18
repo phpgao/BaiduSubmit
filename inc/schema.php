@@ -1,6 +1,6 @@
 <?php
 
-class BaidusubmitSchemaPo111st
+class BaidusubmitSchemaPost
 {
     private $_lastmod;
     private $_loc;
@@ -104,7 +104,7 @@ class BaidusubmitSchemaPo111st
 
     public function addAudio(BaidusubmitSchemaAudio $audio)
     {
-        $this->_audioList[] =  $audio;
+        $this->_audioList[] = $audio;
     }
 
     public function toXml()
@@ -142,32 +142,32 @@ class BaidusubmitSchemaPo111st
         }
 
         return
-    "<url>\n" .
-        "<loc><![CDATA[{$this->_url}]]></loc>\n" .
-        "<lastmod>{$this->_lastmod}</lastmod>\n" .
-        "<data>\n" .
+            "<url>\n" .
+            "<loc><![CDATA[{$this->_url}]]></loc>\n" .
+            "<lastmod>{$this->_lastmod}</lastmod>\n" .
+            "<data>\n" .
             "<blogposting>\n" .
-                "<headline><![CDATA[{$this->_title}]]></headline>\n" .
-                "<url><![CDATA[{$this->_url}]]></url>\n" .
-                "<articleAuthor>\n" .
-                    "<articleAuthor>\n" .
-                        "<alias><![CDATA[{$this->_author}]]></alias>\n" .
-                    "</articleAuthor>\n" .
-                "</articleAuthor>\n" .
-                "<articleBody><![CDATA[{$this->_content}]]></articleBody>\n" .
-                "<articleTime>{$this->_publishTime}</articleTime>\n" .
-                "<articleModifiedTime>{$this->_lastmod}</articleModifiedTime>\n" .
-                "{$keywords}" .
-                "<articleSection><![CDATA[{$this->_term}]]></articleSection>\n" .
-                "{$pics}\n" .
-                "{$video}" .
-                "{$audio}" .
-                "{$comment}" .
-                "<articleCommentCount>{$this->_commentCount}</articleCommentCount>\n" .
-                "<articleLatestComment>{$this->_latestCommentTime}</articleLatestComment>\n" .
+            "<headline><![CDATA[{$this->_title}]]></headline>\n" .
+            "<url><![CDATA[{$this->_url}]]></url>\n" .
+            "<articleAuthor>\n" .
+            "<articleAuthor>\n" .
+            "<alias><![CDATA[{$this->_author}]]></alias>\n" .
+            "</articleAuthor>\n" .
+            "</articleAuthor>\n" .
+            "<articleBody><![CDATA[{$this->_content}]]></articleBody>\n" .
+            "<articleTime>{$this->_publishTime}</articleTime>\n" .
+            "<articleModifiedTime>{$this->_lastmod}</articleModifiedTime>\n" .
+            "{$keywords}" .
+            "<articleSection><![CDATA[{$this->_term}]]></articleSection>\n" .
+            "{$pics}\n" .
+            "{$video}" .
+            "{$audio}" .
+            "{$comment}" .
+            "<articleCommentCount>{$this->_commentCount}</articleCommentCount>\n" .
+            "<articleLatestComment>{$this->_latestCommentTime}</articleLatestComment>\n" .
             "</blogposting>\n" .
-        "</data>\n" .
-    "</url>\n";
+            "</data>\n" .
+            "</url>\n";
     }
 }
 
@@ -187,7 +187,7 @@ class BaidusubmitSchemaComment
         if (!preg_match('#^\d+$#', $time)) {
             $time = strtotime($time);
         }
-        $this->_time = BaidusubmitSitemap::dateFormat($time, $only_date=TRUE);
+        $this->_time = BaidusubmitSitemap::dateFormat($time, $only_date = TRUE);
     }
 
     public function setCreator($creator)
@@ -197,15 +197,15 @@ class BaidusubmitSchemaComment
 
     public function toXml()
     {
-        return '<comment>'.
-                '<commentText><![CDATA[' . $this->_text .']]></commentText>'.
-                '<commentTime>' . $this->_time . '</commentTime>'.
-                '<creator>'.
-                    '<person>'.
-                        '<alias>' . $this->_creator . '</alias>'.
-                    '</person>'.
-                '</creator>'.
-                '</comment>' . "\n";
+        return '<comment>' .
+        '<commentText><![CDATA[' . $this->_text . ']]></commentText>' .
+        '<commentTime>' . $this->_time . '</commentTime>' .
+        '<creator>' .
+        '<person>' .
+        '<alias>' . $this->_creator . '</alias>' .
+        '</person>' .
+        '</creator>' .
+        '</comment>' . "\n";
     }
 }
 
@@ -233,10 +233,10 @@ class BaidusubmitSchemaVideo
     public function toXml()
     {
         return '<video>' .
-                '<caption><![CDATA[' . $this->_caption . ']]></caption>' .
-                '<thumbnail><![CDATA[' . $this->_thumbnail . ']]></thumbnail>' .
-                '<url><![CDATA[' . $this->_url .']]></url>' .
-                '</video>' . "\n";
+        '<caption><![CDATA[' . $this->_caption . ']]></caption>' .
+        '<thumbnail><![CDATA[' . $this->_thumbnail . ']]></thumbnail>' .
+        '<url><![CDATA[' . $this->_url . ']]></url>' .
+        '</video>' . "\n";
     }
 }
 
@@ -258,8 +258,8 @@ class BaidusubmitSchemaAudio
     function toXml()
     {
         return '<audio>' .
-                '<name><![CDATA[' . $this->_name . ']]></name>' .
-                '<url><![CDATA[' . $this->_url .']]></url>' .
-                '</audio>' . "\n";
+        '<name><![CDATA[' . $this->_name . ']]></name>' .
+        '<url><![CDATA[' . $this->_url . ']]></url>' .
+        '</audio>' . "\n";
     }
 }

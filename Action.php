@@ -5,7 +5,7 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 
     public function __construct()
     {
-        $this->_dir = '.'. __TYPECHO_PLUGIN_DIR__.'/BaiduSubmit/inc/';
+        $this->_dir = '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/';
         define('TYPE_ALL', 1);
         define('TYPE_INC', 2);
     }
@@ -25,12 +25,14 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
     }
 
 
-    public function action(){}
+    public function action()
+    {
+    }
 
     public function baidusitemap()
     {
-        require $this->_dir.'sitemap.php';
-        $ids = BaidusubmitSitemap::get_post_id_by_range(1,300);
+        require $this->_dir . 'sitemap.php';
+        $ids = BaidusubmitSitemap::get_post_id_by_range(1, 300);
 
         $content = BaidusubmitSitemap::gen_elenment_by_cid($ids);
 
@@ -53,7 +55,8 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
     }
 
 
-    protected function gen_sitemap_all(){
+    protected function gen_sitemap_all()
+    {
         $this->print_xml_header();
         //$this->print_xml_footer();
         $options = $this->widget('Widget_Options');
@@ -63,8 +66,8 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
     }
 
 
-
-    protected function print_xml_header(){
+    protected function print_xml_header()
+    {
         header('Content-Type: text/xml; charset=utf-8');
         echo '<?xml version="1.0" encoding="UTF-8"?>', "\n";
         echo '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', "\n";

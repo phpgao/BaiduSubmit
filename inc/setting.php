@@ -1,7 +1,6 @@
 <?php
 
 
-
 class BaidusubmitSetting
 {
     const TYPE_ALL = 1;

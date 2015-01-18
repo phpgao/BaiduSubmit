@@ -63,7 +63,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         $form->addInput($passwd);
 
 
-        $renew = new Typecho_Widget_Helper_Form_Element_Checkbox('renew', array(1 => '更新'), 0, _t('是否更新token'),'更新后会提交一次全部sitemap');
+        $renew = new Typecho_Widget_Helper_Form_Element_Checkbox('renew', array(1 => '更新'), 0, _t('是否更新token'), '更新后会提交一次全部sitemap');
         $form->addInput($renew);
 
 
@@ -99,7 +99,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
     public static function configHandle($config, $is_init)
     {
-        $current_dir = '.'. __TYPECHO_PLUGIN_DIR__.'/BaiduSubmit/';
+        $current_dir = '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/';
 
         if (false == Typecho_Http_Client::get()) {
             throw new Typecho_Plugin_Exception(_t('对不起, 您的主机不支持 php-curl 扩展而且没有打开 allow_url_fopen 功能, 无法正常使用此功能'));
@@ -118,7 +118,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         //如果更新或者初始化
         if (!is_null($config['renew']) || $is_init) {
 
-            $config['passwd'] = substr(md5(mt_rand(10000000, 99999999).microtime()), 0, 16);
+            $config['passwd'] = substr(md5(mt_rand(10000000, 99999999) . microtime()), 0, 16);
             //$curl = new Typecho_Http_Client_Adapter_Curl();
             //获取checksign
             $url = $config_from_file['zzplatform'] . '/getCheckSign?siteurl=' . urlencode($site_url) . '&sitetype=' . $config_from_file['siteTypeKey'];
@@ -142,7 +142,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
 
             $token_json = $client->httpSend($sigurl);
-            file_put_contents("/tmp/sitemap.log",var_export($token_json,1)."\n",FILE_APPEND);
+            file_put_contents("/tmp/sitemap.log", var_export($token_json, 1) . "\n", FILE_APPEND);
 
             $token = json_decode($token_json)->token;
             $config['token'] = $token;
@@ -151,11 +151,11 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
             //回调URL
             $indexurl = "{$site_url}sitemap.xml";
-            $sign = md5($site_url.$token);
+            $sign = md5($site_url . $token);
 
-            $submiturl = $config_from_file['zzplatform'].'/saveSitemap?siteurl='. urlencode($site_url) .'&indexurl='.urlencode($indexurl).'&tokensign='.urlencode($sign).'&type=all'.'&resource_name=RDF_Other_Blogposting';
+            $submiturl = $config_from_file['zzplatform'] . '/saveSitemap?siteurl=' . urlencode($site_url) . '&indexurl=' . urlencode($indexurl) . '&tokensign=' . urlencode($sign) . '&type=all' . '&resource_name=RDF_Other_Blogposting';
             $res = $client->httpSend($submiturl);
-            $data = json_decode($res,1);
+            $data = json_decode($res, 1);
             //保存token
             helper::configPlugin('BaiduSubmit', $config);
             //获取到正确的token后开始提交sitemap
