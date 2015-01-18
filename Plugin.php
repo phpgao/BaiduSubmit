@@ -23,7 +23,6 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
         Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Plugin', 'send_xml');
         Helper::addRoute('checksign', '/checksign/', 'BaiduSubmit_Action', 'checksign');
-        Helper::addRoute('sitemap', '/baidusubmit/', 'BaiduSubmit_Action', 'sitemap');
         return "安装成功！";
     }
 
@@ -131,6 +130,8 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             $url = $site_url . 'checksign/?checksign=' . $config['checksign'];
             $sigurl = $config_from_file['zzplatform'] . '/auth?checksign=' . $config['checksign'] . '&checkurl=' . urlencode($url) . '&siteurl=' . urlencode($site_url);
             $token_json = file_get_contents($sigurl);
+            file_put_contents("/tmp/sitemap.log",var_export($token_json,1)."\n",FILE_APPEND);
+
             $token = json_decode($token_json)->token;
             $config['token'] = $token;
 
