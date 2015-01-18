@@ -22,8 +22,8 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
         Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
         Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Plugin', 'send_xml');
-        Helper::addRoute('BaiduSubmit', '/checksign/', 'BaiduSubmit_Action', 'checksign');
-        Helper::addRoute('BaiduSubmit', '/baidusubmit/', 'BaiduSubmit_Action', 'sitemap');
+        Helper::addRoute('checksign', '/checksign/', 'BaiduSubmit_Action', 'checksign');
+        Helper::addRoute('sitemap', '/baidusubmit/', 'BaiduSubmit_Action', 'sitemap');
         return "安装成功！";
     }
 
