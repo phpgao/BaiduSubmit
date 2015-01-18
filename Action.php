@@ -5,6 +5,7 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 
     public function __construct()
     {
+        $this->_dir = '.'. __TYPECHO_PLUGIN_DIR__.'/BaiduSubmit/inc/';
         define('TYPE_ALL', 1);
         define('TYPE_INC', 2);
     }
@@ -16,7 +17,7 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
             exit;
         }
 
-        $data = Typecho_Widget::widget('Widget_Options')->plugin('BaiduSubmit');
+        $data = Helper::options()->plugin('BaiduSubmit');
 
         if ($data->checksign == $checksign) {
             echo $data->checksign;
@@ -26,14 +27,13 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 
     public function action(){}
 
-    public function sitemap()
+    public function baidusitemap()
     {
-        require dirname(__FILE__).DIRECTORY_SEPARATOR.'inc'.DIRECTORY_SEPARATOR.'sitemap.php';
-        /*获取地图类型
-        sitemap
-        删除文章
-        增量文章
-        */
+        require $this->_dir.'sitemap.php';
+        $ids = BaidusubmitSitemap::get_post_id_by_range(1,300);
+
+        $content = BaidusubmitSitemap::gen_elenment_by_cid($ids);
+
         $type = $_GET['type'];
 
         $type += 0;
