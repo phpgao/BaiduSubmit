@@ -7,6 +7,8 @@ class BaidusubmitSitemap
     const TYPE_INC = 2;
 
     public static $_dir;
+    public static $author_list = array();
+
 
     public function __construct()
     {
@@ -65,13 +67,12 @@ class BaidusubmitSitemap
 
         if (!is_array($ids)) {
             $_ids[] = $ids;
+        }else{
+            $_ids = $ids;
         }
 
-        $_ids = $ids;
-
-        //获取到结果集准备与ids匹配信息
-        $info_arr = self::get_post_info_by_cid($_ids);
-
+        //对应的文章信息
+        $post_list = self::get_post_info_by_cid($_ids);
 
         require_once '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/schema.php';
 
@@ -80,11 +81,18 @@ class BaidusubmitSitemap
         $schema_arr = array();
 
         //查询作者数组
+        self::get_author_list();
+        if(count($post_list) == 0){
+            throw new Typecho_Plugin_Exception('no posts!');
+        }
+        foreach ($post_list as $k => $v) {
+            dump($v);
 
-
-        foreach ($ids as $k => $v) {
-            $post_schema->setAuthor(123);
-
+            $post_schema->setLastmod($v['modified']);
+            $post_schema->setTags($v['tags']);
+            $post_schema->setAuthor(self::get_user_screen_name($v['authorId']));
+            dump($post_schema);
+            die;
             //查询评论方法
 
 
@@ -96,9 +104,15 @@ class BaidusubmitSitemap
 
     }
 
-
+    /**
+     * 根据cid查询文章信息
+     * @param $ids
+     * @return array
+     * @throws Typecho_Db_Exception
+     */
     public static function get_post_info_by_cid($ids)
     {
+
         $id_set = implode(',', $ids);
         $id_set = '' . $id_set . '';
 
@@ -115,15 +129,114 @@ class BaidusubmitSitemap
 
         $content_info = $db->fetchAll($sql);
 
-        return $content_info;
+        $tag_list = self::get_tag_by_cid($id_set);
+        $comment_list = self::get_comment_by_cid($id_set);
+
+        foreach ($content_info as $v) {
+            $cid = $v['cid'] + 0;
+            $content_list[$cid] = $v;
+            if($tag_list){
+                if(key_exists($cid,$tag_list)){
+                    $content_list[$cid]['tags'] = $tag_list[$cid];
+                }
+            }
+
+            if($content_info){
+                if(key_exists($cid,$comment_list)){
+                    $content_list[$cid]['comments'] = $comment_list[$cid];
+                }
+            }
+
+        }
+
+        return $content_list;
     }
 
-    static function dateFormat($time, $only_date = false)
+    public static function dateFormat($time, $only_date = false)
     {
         //date_default_timezone_set(get_option('timezone_string', 'Asia/Shanghai'));
         if ($only_date) {
             return date('Y-m-d', $time);
         }
         return date('Y-m-d', $time) . 'T' . date('H:i:s', $time);
+    }
+
+
+    public static function get_author_list($id = false)
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+        $data = $db->fetchAll($db->select('uid,name,mail,url,screenName,created')->from('table.users'));
+
+        foreach ($data as $k => $v) {
+            self::$author_list[$v['uid']] = $v;
+        }
+
+        if ($id === false) {
+            return self::$author_list;
+        }
+
+        return self::$author_list[$id];
+    }
+
+    public static function get_user_screen_name($id)
+    {
+        $id = $id + 0;
+        if (count(self::$author_list) == 0) {
+            self::$author_list = self::get_author_list();
+        }
+
+        return self::$author_list[$id]['screenName'];
+    }
+
+    public static function get_tag_by_cid($cid)
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+        $sql = "SELECT cid,name
+        FROM {$prefix}relationships as rs
+        LEFT JOIN {$prefix}metas as m ON m.`mid` = rs.`mid`
+        WHERE rs.`cid` in ({$cid})
+        AND m.type = 'tag'";
+
+        $data = $db->fetchAll($sql);
+
+        if(count($data) == 0){
+            return false;
+        }
+
+        $tag_list = array();
+
+        foreach ($data as $v) {
+            $tag_list[$v['cid']][] = $v['name'];
+        }
+
+        return $tag_list;
+    }
+
+    public static function get_comment_by_cid($cid)
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+        $sql = "SELECT cid,created,author,text
+        FROM {$prefix}comments as c
+        WHERE c.`cid` in ({$cid})
+        AND c.status = 'approved'";
+        $data = $db->fetchAll($sql);
+
+        $comment_list = array();
+        require_once '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/schema.php';
+        if(count($data) == 0){
+            return false;
+        }
+        foreach ($data as $v) {
+            $comment_obj = new BaidusubmitSchemaComment();
+            $comment_obj->setCreator($v['author']);
+            $comment_obj->setTime($v['created']);
+            $comment_obj->setText($v['text']);
+            $comment_list[$v['cid']][] = $comment_obj;
+        }
+
+        return $comment_list;
     }
 }
