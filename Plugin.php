@@ -25,7 +25,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         //检查checksign
         Helper::addRoute('checksign', '/checksign/', 'BaiduSubmit_Action', 'checksign');
         //网站地图
-        Helper::addRoute('sitemap_by_phpgao', '/baidusitemap/', 'BaiduSubmit_Action', 'baidusitemap');
+        Helper::addRoute('sitemap_by_phpgao', '/baidusitemap.xml', 'BaiduSubmit_Action', 'baidusitemap');
         return "安装成功！";
     }
 
@@ -150,7 +150,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             //使用token提交sitemap
 
             //回调URL
-            $indexurl = "{$site_url}sitemap.xml";
+            $indexurl = "{$site_url}baidusitemap.xml";
             $sign = md5($site_url . $token);
 
             $submiturl = $config_from_file['zzplatform'] . '/saveSitemap?siteurl=' . urlencode($site_url) . '&indexurl=' . urlencode($indexurl) . '&tokensign=' . urlencode($sign) . '&type=all' . '&resource_name=RDF_Other_Blogposting';

@@ -42,22 +42,6 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         }
 
         $this->print_xml_footer();
-        $type = $_GET['type'];
-
-        $type += 0;
-
-
-        switch ($type) {
-            case TYPE_ALL:
-                $this->gen_sitemap_all();
-                break;
-
-            case TYPE_INC:
-                echo "增量";
-                break;
-        }
-
-
     }
 
 
