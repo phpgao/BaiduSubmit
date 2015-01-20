@@ -59,14 +59,13 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
     protected function print_xml_header()
     {
         header('Content-Type: text/xml; charset=utf-8');
-        echo '<?xml version="1.0" encoding="UTF-8"?>', "\n";
-        echo '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', "\n";
+        echo '<?xml version="1.0" encoding="UTF-8"?><urlset>';
     }
 
 
     protected function print_xml_footer()
     {
-        echo '</sitemapindex>';
+        echo '</urlset>';
     }
 
 }
