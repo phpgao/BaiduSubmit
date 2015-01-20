@@ -72,11 +72,11 @@ class BaidusubmitSitemap
         }
 
         //对应的文章信息
-        $post_list = self::get_post_info_by_cid($_ids);
+        $post_list = self::get_post_info_by_cid($ids);
 
         require_once '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/schema.php';
+        $options = Helper::options();
 
-        $post_schema = new BaidusubmitSchemaPost();
 
         $schema_arr = array();
 
@@ -86,13 +86,68 @@ class BaidusubmitSitemap
             throw new Typecho_Plugin_Exception('no posts!');
         }
         foreach ($post_list as $k => $v) {
-            dump($v);
+            $post_schema = new BaidusubmitSchemaPost();
+
+            $post_schema->setTitle($v['title']);
+
+            $post_schema->setPublishTime($v['created']);
 
             $post_schema->setLastmod($v['modified']);
-            $post_schema->setTags($v['tags']);
+
+            $post_schema->setUrl($v['permalink']);
+
+            if(isset($v['tags'])){
+                $post_schema->setTags($v['tags']);
+            }
+            # 设置作者
             $post_schema->setAuthor(self::get_user_screen_name($v['authorId']));
-            dump($post_schema);
-            die;
+            # 设置评论数
+            $post_schema->setCommentCount($v['commentsNum']);
+            # 添加评论
+            if($v['commentsNum']>0){
+                foreach($v['comments'] as $comment){
+                    $post_schema->addComment($comment);
+                }
+                # 如果获取不到时间以上次修改时间为准
+                $last_comment_time = $comment->getTime() ? $comment->getTime() : $v['modified'];
+
+                $post_schema->setLatestCommentTime($last_comment_time);
+            }
+            # 设置分类(唯一)
+            $post_schema->setTerm($v['category']);
+
+
+
+            $multimedia = array();
+            $_content = BaidusubmitSitemap::filterContent(Markdown::convert($v['text']), $multimedia);
+
+            $post_schema->setContent($_content);
+
+            if (!empty($multimedia['image'])) {
+                $post_schema->setPictures($multimedia['image']);
+            }
+            if (!empty($multimedia['audio'])) {
+                foreach ($multimedia['audio'] as $a) {
+                    $audio = new BaidusubmitSchemaAudio();
+                    $audio->setName((string)@$a['name']);
+                    $audio->setUrl((string)@$a['url']);
+                    $post_schema->addAudio($audio);
+                }
+                unset($a, $audio);
+            }
+            if (!empty($multimedia['video'])) {
+                foreach ($multimedia['video'] as $v) {
+                    $video = new BaidusubmitSchemaVideo();
+                    $video->setCaption((string)@$v['caption']);
+                    $video->setThumbnail((string)@$v['thumbnail']);
+                    $video->setUrl((string)@$v['url']);
+                    $post_schema->addVideo($video);
+                }
+                unset($v, $video);
+            }
+
+
+            $schema_arr[] = $post_schema;
             //查询评论方法
 
 
@@ -100,8 +155,7 @@ class BaidusubmitSitemap
 
 
         }
-
-
+        return $schema_arr;
     }
 
     /**
@@ -112,9 +166,13 @@ class BaidusubmitSitemap
      */
     public static function get_post_info_by_cid($ids)
     {
+        if(is_array($ids)){
+            $id_set = implode(',', $ids);
+            $id_set = '' . $id_set . '';
+        }else{
+            $id_set = $ids;
+        }
 
-        $id_set = implode(',', $ids);
-        $id_set = '' . $id_set . '';
 
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
@@ -134,25 +192,37 @@ class BaidusubmitSitemap
         $tag_list = self::get_tag_by_cid($id_set);
         $comment_list = self::get_comment_by_cid($id_set);
 
+        # 获取永久连接
+        # 代码见 var/Widget/Abstract/Contents.php
+        $options = Helper::options();
+        $type = 'post';
+        $routeExists = (NULL != Typecho_Router::get($type));
+
 
         foreach ($content_info as $v) {
             $cid = $v['cid'] + 0;
             $content_list[$cid] = $v;
             $content_list[$cid]['category'] = $category_list[$cid];
+
+            # 永久连接
+            $content_list[$cid]['pathinfo'] = $routeExists ? Typecho_Router::url($type, $v) : '#';
+            $content_list[$cid]['permalink'] = Typecho_Common::url($content_list[$cid]['pathinfo'], $options->index);
+
+            # tag列表
             if($tag_list){
-                if(array_key_exists($cid,$tag_list)){
+                if(@array_key_exists($cid,$tag_list)){
                     $content_list[$cid]['tags'] = $tag_list[$cid];
                 }
             }
 
-            if($content_info){
-                if(array_key_exists($cid,$comment_list)){
+            # 评论列表 数组格式
+            if($comment_list){
+                if(@array_key_exists($cid,$comment_list)){
                     $content_list[$cid]['comments'] = $comment_list[$cid];
                 }
             }
 
         }
-        dump($content_list);
         return $content_list;
     }
 
@@ -264,6 +334,137 @@ class BaidusubmitSitemap
         }
 
         return $category_list;
+    }
+
+
+    static function stripInvalidXml($value)
+    {
+        $ret = '';
+        if (empty($value)) {
+            return $ret;
+        }
+
+        $length = strlen($value);
+        for ($i=0; $i < $length; $i++) {
+            $current = ord($value[$i]);
+            if ($current == 0x9 || $current == 0xA || $current == 0xD ||
+                ($current >= 0x20 && $current <= 0xD7FF) ||
+                ($current >= 0xE000 && $current <= 0xFFFD) ||
+                ($current >= 0x10000 && $current <= 0x10FFFF)) {
+                $ret .= chr($current);
+            } else {
+                $ret .= ' ';
+            }
+        }
+        return $ret;
+    }
+
+
+    static function filterContent($post, &$multimedia)
+    {
+        $imgtype = array('jpg','gif','png','bmp','jpeg');
+        $audtype = array('wav','mid','mp3','m3u','wma','vqf','ra');
+        $vidtype = array('swf','fla','flv','swi','f4v','asx','mpg','mpeg','aui','wmv','rm','rv','rmvb','mov');
+
+        $multimedia = array('image' => array(), 'audio' => array(), 'video' => array());
+        $matches = array();
+        $content = trim($post);
+
+        if (false !== stripos($content, '<img')) {
+            $imgregex = '/<img\s*(.*?)\s*src\s*=\s*["\'](.*?)["\'][^>]*>/isx';
+            if (preg_match_all($imgregex, $content, $matches)) {
+                foreach ($matches[2] as $url) {
+                    if (0 != strncasecmp('http', $url, 4)) {
+                        continue;
+                    }
+                    $multimedia['image'][$url] = $url;
+                }
+            }
+        }
+
+        if (false !== stripos($content, '<embed') || false !== stripos($content, '<source')) {
+            $embregex = '/<(embed|source)\s*(.*?)\s*src\s*=\s*["\'](.*?)["\'][^>]*>/isx';
+            if (preg_match_all($embregex, $content, $matches)) {
+                foreach ($matches[3] as $url) {
+                    if (0 != strncasecmp('http', $url, 4)) {
+                        continue;
+                    }
+                    $ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
+                    if (in_array($ext, $audtype)) {
+                        $multimedia['audio'][$url] = array('url' => $url);
+                    } else if (in_array($ext, $vidtype)) {
+                        $multimedia['video'][$url] = array('url' => $url);
+                    }
+                }
+            }
+        }
+
+        if (false !== stripos($content, '<a')) {
+            $linkregex = '/<a\s*(.*?)href\s*=\s*["\'](.*?)["\'](.*?)>(.*?)<\/a>/isx';
+            if (preg_match_all($linkregex, $content, $matches)) {
+                $linklist = $matches[2];
+                $captionlist = $matches[4];
+                foreach ($linklist as $key => $url) {
+                    $ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
+                    if (in_array($ext, $imgtype)) {
+                        $multimedia['image'][$url] = $url;
+                    } else if (in_array($ext, $audtype)) {
+                        $multimedia['audio'][$url] = array('name' => $captionlist[$key], 'url' => $url);
+                    } else if (in_array($ext, $vidtype) || stripos('.swf?', $url)) {
+                        $multimedia['video'][$url] = array('caption' => $captionlist[$key], 'url' => $url);
+                    }
+                }
+            }
+        }
+
+        if (false !== stripos($content, '[audio') || false !== stripos($content, '[video')) {
+            $ubbregex = '/\[(audio|video)\s*(.*?)"(http:\/\/.*?)"(.*?)\](.*?)\[(\/audio|video)\]/isx';
+            if (preg_match_all($ubbregex, $content, $matches)) {
+                $typelist = $matches[1];
+                $linklist = $matches[3];
+                $captionlist = $matches[5];
+                foreach ($captionlist as $key => $val) {
+                    if (empty($val)) $captionlist[$key] = $linklist[$key];
+                }
+                foreach ($linklist as $key => $url) {
+                    if (stripos($typelist[$key], 'audio') !== false) {
+                        $multimedia['audio'][$url] = array('name' => $captionlist[$key], 'url' => $url);
+                    } else if (stripos($typelist[$key], 'video') !== false) {
+                        $multimedia['video'][$url] = array('caption' => $captionlist[$key], 'url' => $url);
+                    }
+                }
+            }
+        }
+
+        // reset array key
+        $multimedia['image'] = array_values($multimedia['image']);
+        $multimedia['audio'] = array_values($multimedia['audio']);
+        $multimedia['video'] = array_values($multimedia['video']);
+
+        return strip_tags($post);
+    }
+
+
+    static function encodeUrl($url)
+    {
+        $hexchars = '0123456789ABCDEF';
+        $i = 0;
+        $ret = '';
+        while (isset($url[$i])) {
+            $c = $url[$i];
+            $j = ord($c);
+            if ($c == ' ') {
+                $ret .= '%20';
+            }
+            else if ($j > 127) {
+                $ret .= '%' . $hexchars[$j>>4] . $hexchars[$j&15];
+            }
+            else {
+                $ret .= $c;
+            }
+            $i++;
+        }
+        return $ret;
     }
 
 }

@@ -36,6 +36,12 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 
         $content = BaidusubmitSitemap::gen_elenment_by_cid($ids);
 
+        $this->print_xml_header();
+        foreach($content as $v){
+            echo $v->toXml();
+        }
+
+        $this->print_xml_footer();
         $type = $_GET['type'];
 
         $type += 0;
