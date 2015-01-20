@@ -129,26 +129,30 @@ class BaidusubmitSitemap
 
         $content_info = $db->fetchAll($sql);
 
+        $category_list = self::get_category_by_cid($id_set);
+
         $tag_list = self::get_tag_by_cid($id_set);
         $comment_list = self::get_comment_by_cid($id_set);
+
 
         foreach ($content_info as $v) {
             $cid = $v['cid'] + 0;
             $content_list[$cid] = $v;
+            $content_list[$cid]['category'] = $category_list[$cid];
             if($tag_list){
-                if(key_exists($cid,$tag_list)){
+                if(array_key_exists($cid,$tag_list)){
                     $content_list[$cid]['tags'] = $tag_list[$cid];
                 }
             }
 
             if($content_info){
-                if(key_exists($cid,$comment_list)){
+                if(array_key_exists($cid,$comment_list)){
                     $content_list[$cid]['comments'] = $comment_list[$cid];
                 }
             }
 
         }
-
+        dump($content_list);
         return $content_list;
     }
 
@@ -239,4 +243,27 @@ class BaidusubmitSitemap
 
         return $comment_list;
     }
+
+    public static function get_category_by_cid($cid)
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+        $sql = "SELECT cid,name
+        FROM {$prefix}relationships as rs
+        LEFT JOIN {$prefix}metas as m ON m.`mid` = rs.`mid`
+        WHERE rs.`cid` in ({$cid})
+        AND m.type = 'category' GROUP BY cid";
+        $data = $db->fetchAll($sql);
+
+        $category_list = array();
+
+        foreach ($data as $v) {
+            foreach ($data as $v) {
+                $category_list[$v['cid']] = $v['name'];
+            }
+        }
+
+        return $category_list;
+    }
+
 }
