@@ -58,4 +58,18 @@ class BaidusubmitSetting
     }
 
 
+    public static function checkPasswd(){
+        if(!isset($_GET['p']) || !isset($_GET['m'])){
+            BaidusubmitSitemap::headerStatus(404);
+            die;
+        }
+        $passwd = self::get_plugin_config()->passwd;
+
+        if($passwd != $_GET['p']){
+            BaidusubmitSitemap::headerStatus(404);
+            die;
+        }
+    }
+
+
 }

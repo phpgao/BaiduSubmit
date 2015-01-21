@@ -32,6 +32,10 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
     public function baidusitemap()
     {
         require $this->_dir . 'sitemap.php';
+        require $this->_dir . 'setting.php';
+
+        BaidusubmitSetting::checkPasswd();
+
         $ids = BaidusubmitSitemap::get_post_id_by_range(1, 300);
 
         $content = BaidusubmitSitemap::gen_elenment_by_cid($ids);

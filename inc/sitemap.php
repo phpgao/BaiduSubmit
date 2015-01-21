@@ -632,4 +632,12 @@ class BaidusubmitSitemap
         }
     }
 
+
+    static function headerStatus($status)
+    {
+        // 'cgi', 'cgi-fcgi'
+        header('Status: '.$status, TRUE);
+        header($_SERVER['SERVER_PROTOCOL'].' '.$status);
+    }
+
 }
