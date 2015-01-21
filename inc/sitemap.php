@@ -467,4 +467,169 @@ class BaidusubmitSitemap
         return $ret;
     }
 
+
+    static function submitIndex($action, $type, $site, $sppasswd, $sign)
+    {
+        $zzaction = '';
+        if (0 == strncasecmp('del', $action, 3)) {
+            $zzaction = '/deleteSitemap';
+        } else if (0 == strncasecmp('add', $action, 3)) {
+            $zzaction = '/saveSitemap';
+        } else {
+            return false;
+        }
+
+        $script = '';
+        $stype = '';
+
+        if (1 == $type) {
+            $script = 'indexall';
+            $stype = 'all';
+        } else if (2 == $type) {
+            $script = 'indexinc';
+            $stype = 'inc';
+        } else {
+            return false;
+        }
+
+        $indexurl = "{$site}baidusubmit/sitemap?m={$script}&p={$sppasswd}";
+        $config = BaidusubmitSetting::get_const();
+        $zzsite = $config['zzplatform'];
+        $submiturl = $zzsite.$zzaction.'?siteurl='.urlencode($site).'&indexurl='.urlencode($indexurl).'&tokensign='.urlencode($sign).'&type='.$stype.'&resource_name=RDF_Other_Blogposting';
+        BaidusubmitSetting::logger('我', '提交sitemap', 'failed', $indexurl);
+        die;
+        //$ret = BaidusubmitSitemap::httpSend($submiturl);
+
+        return array(
+            'body' => $ret,
+            'url'  => $submiturl,
+        );
+    }
+
+
+
+    static function sendXml($xml, $type)
+    {
+        require_once dirname(__FILE__).DIRECTORY_SEPARATOR.'options.php';
+
+        $siteurl = BaidusubmitOptions::getOption('siteurl');
+        $token = BaidusubmitOptions::getOption('pingtoken');
+        if (!$token) return false;
+
+        $const = include dirname(__FILE__).DIRECTORY_SEPARATOR.'const.php';
+        $pingurl = $const['zzpingurl'];
+
+        if ($type === 1) {  //新增或更新
+            $url .= $pingurl . '?site='.urlencode($siteurl).'&resource_name=RDF_Other_Blogposting&method=add';
+        }
+        if ($type === 2) {  //删除
+            $url .= $pingurl . '?site='.urlencode($siteurl).'&resource_name=sitemap&method=del';
+        }
+        $sign = md5($siteurl.$xml.$token);
+        $url .= '&sign='.$sign;
+
+        return self::httpSend($url, 0, $xml);
+    }
+
+    static function httpSend($url, $limit=0, $post='', $cookie='', $timeout=15)
+    {
+        $return = '';
+        $matches = parse_url($url);
+        $scheme = $matches['scheme'];
+        $host = $matches['host'];
+        $path = $matches['path'] ? $matches['path'].(@$matches['query'] ? '?'.$matches['query'] : '') : '/';
+        $port = !empty($matches['port']) ? $matches['port'] : 80;
+
+        if (function_exists('curl_init') && function_exists('curl_exec')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $scheme.'://'.$host.':'.$port.$path);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+            if ($post) {
+                curl_setopt($ch, CURLOPT_POST, 1);
+                $content = is_array($port) ? http_build_query($post) : $post;
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
+            }
+            if ($cookie) {
+                curl_setopt($ch, CURLOPT_COOKIE, $cookie);
+            }
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+            $data = curl_exec($ch);
+            $status = curl_getinfo($ch);
+            $errno = curl_errno($ch);
+            curl_close($ch);
+            if ($errno || $status['http_code'] != 200) {
+                return;
+            } else {
+                return !$limit ? $data : substr($data, 0, $limit);
+            }
+        }
+
+        if ($post) {
+            $content = is_array($port) ? http_build_query($post) : $post;
+            $out = "POST $path HTTP/1.0\r\n";
+            $header = "Accept: */*\r\n";
+            $header .= "Accept-Language: zh-cn\r\n";
+            $header .= "Content-Type: application/x-www-form-urlencoded\r\n";
+            $header .= "User-Agent: ".@$_SERVER['HTTP_USER_AGENT']."\r\n";
+            $header .= "Host: $host:$port\r\n";
+            $header .= 'Content-Length: '.strlen($content)."\r\n";
+            $header .= "Connection: Close\r\n";
+            $header .= "Cache-Control: no-cache\r\n";
+            $header .= "Cookie: $cookie\r\n\r\n";
+            $out .= $header.$content;
+        } else {
+            $out = "GET $path HTTP/1.0\r\n";
+            $header = "Accept: */*\r\n";
+            $header .= "Accept-Language: zh-cn\r\n";
+            $header .= "User-Agent: ".@$_SERVER['HTTP_USER_AGENT']."\r\n";
+            $header .= "Host: $host:$port\r\n";
+            $header .= "Connection: Close\r\n";
+            $header .= "Cookie: $cookie\r\n\r\n";
+            $out .= $header;
+        }
+
+        $fpflag = 0;
+        $fp = false;
+        if (function_exists('fsocketopen')) {
+            $fp = fsocketopen($host, $port, $errno, $errstr, $timeout);
+        }
+        if (!$fp) {
+            $context = stream_context_create(array(
+                'http' => array(
+                    'method' => $post ? 'POST' : 'GET',
+                    'header' => $header,
+                    'content' => $content,
+                    'timeout' => $timeout,
+                ),
+            ));
+            $fp = @fopen($scheme.'://'.$host.':'.$port.$path, 'b', false, $context);
+            $fpflag = 1;
+        }
+
+        if (!$fp) {
+            return '';
+        } else {
+            stream_set_blocking($fp, true);
+            stream_set_timeout($fp, $timeout);
+            @fwrite($fp, $out);
+            $status = stream_get_meta_data($fp);
+            if (!$status['timed_out']) {
+                while (!feof($fp) && !$fpflag) {
+                    if (($header = @fgets($fp)) && ($header == "\r\n" ||  $header == "\n")) {
+                        break;
+                    }
+                }
+                if ($limit) {
+                    $return = stream_get_contents($fp, $limit);
+                } else {
+                    $return = stream_get_contents($fp);
+                }
+            }
+            @fclose($fp);
+            return $return;
+        }
+    }
+
 }
