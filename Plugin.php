@@ -41,6 +41,18 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     {
         Helper::removeRoute('checksign');
         Helper::removeRoute('sitemap_by_phpgao');
+        # 删除与密码关联的网站地图
+        $current_dir = '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/';
+        require $current_dir.'inc/sitemap.php';
+        require $current_dir.'inc/setting.php';
+        $token = Helper::options()->plugin('BaiduSubmit')->token;
+        $passwd = Helper::options()->plugin('BaiduSubmit')->passwd;
+        $siteurl = Helper::options()->siteUrl;
+        $sign = md5($siteurl.$token);
+        BaidusubmitSitemap::submitIndex('del', BaidusubmitSitemap::TYPE_ALL, $siteurl, $passwd, $sign);
+        BaidusubmitSitemap::submitIndex('del', BaidusubmitSitemap::TYPE_INC, $siteurl, $passwd, $sign);
+
+
 
     }
 
@@ -140,10 +152,10 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
                 //生成验证字符串
                 $sign = md5($siteurl . $token);
-                $allreturnjson = BaidusubmitSitemap::submitIndex('delete', 1, $siteurl, $config['passwd'], $sign);
+                $allreturnjson = BaidusubmitSitemap::submitIndex('add', 1, $siteurl, $config['passwd'], $sign);
                 $allresult = json_decode($allreturnjson['body']);
                 if (!isset($allresult->status) || '0' != $allresult->status) {
-                    BaidusubmitSetting::logger('我', '提交sitemap', 'failed', $allresult);
+                    BaidusubmitSetting::logger('我', '提交sitemap', 'failed', $allreturnjson);
                 }
 
                 //保存token
@@ -161,7 +173,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
                     2003 => 'Checkurl request failed',
                     2008 => 'Checkurl does not belong to siteurl',
                 );
-                BaidusubmitSetting::logger('我', '获取token', 'failed', $e[$output->status]);
+                BaidusubmitSetting::logger('我', '获取token', 'wrong', $e[$output->status]);
             }
             else {
                 BaidusubmitSetting::logger('我', '获取token', 'failed', array($sigurl,$url,$authData));
