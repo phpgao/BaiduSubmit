@@ -640,4 +640,5 @@ class BaidusubmitSitemap
         header($_SERVER['SERVER_PROTOCOL'].' '.$status);
     }
 
+
 }

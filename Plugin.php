@@ -19,6 +19,9 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
      */
     public static function activate()
     {
+        $current_dir = '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/';
+        require $current_dir . 'inc/sitemap.php';
+        $msg = self::install();
 
         Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
         //Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Plugin', 'send_xml');
@@ -26,7 +29,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         Helper::addRoute('checksign', '/checksign/', 'BaiduSubmit_Action', 'checksign');
         //网站地图
         Helper::addRoute('sitemap_by_phpgao', '/baidusubmit/sitemap', 'BaiduSubmit_Action', 'baidusitemap');
-        return "安装成功！";
+        return "{$msg} 安装成功";
     }
 
     /**
@@ -78,7 +81,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         $max = new Typecho_Widget_Helper_Form_Element_Text('max', null, 5000, _t('一个sitemap文件中包含主题数'));
         $form->addInput($max);
 
-        $renew = new Typecho_Widget_Helper_Form_Element_Checkbox('delete', array(0=>'是'), '', _t('卸载时删除数据表'));
+        $renew = new Typecho_Widget_Helper_Form_Element_Radio('delete', array(0=>'不删除', 1=>'删除'), 1, _t('卸载是否删除数据表'));
         $form->addInput($renew);
 
 
@@ -185,5 +188,37 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         helper::configPlugin('BaiduSubmit', $config);
 
 
+    }
+
+    public static function addTable(){
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+
+
+        $sql = "CREATE TABLE `{$prefix}baidusubmit` (
+                    `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `subject` varchar(255) COMMENT '主体',
+                    `action` varchar(255) COMMENT '动作',
+                    `object` varchar(255) COMMENT '对象',
+                    `result` varchar(255) COMMENT '结果',
+                    `more` varchar(255) COMMENT '更多信息',
+                    `time` bigint COMMENT '时间',
+                    PRIMARY KEY (`id`)
+                ) COMMENT='baidusitemap'";
+
+        $db->query($sql);
+    }
+
+
+    public static function install(){
+        try{
+            self::addTable();
+        }catch (Typecho_Db_Exception $e){
+
+            if('42S01' == $e->getCode()){
+                $db = Typecho_Db::get();
+                $db->query($db->insert('table.baidusubmit')->rows(array('subject'=>'I','action'=>'安装','time'=>time())));
+            }
+        }
     }
 }
