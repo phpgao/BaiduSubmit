@@ -204,7 +204,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
                     `more` varchar(255) COMMENT '更多信息',
                     `time` bigint COMMENT '时间',
                     PRIMARY KEY (`id`)
-                ) COMMENT='baidusitemap'";
+                )DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT='baidusitemap'";
 
         $db->query($sql);
     }
