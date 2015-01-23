@@ -4,8 +4,8 @@
  * 百度结构化插件
  *
  * @package BaiduSubmit
- * @author phpgao
- * @version 0.0.1
+ * @author  老高@PHPer
+ * @version 0.1
  * @link http://www.phpgao.com/
  */
 class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
@@ -67,7 +67,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         $max = new Typecho_Widget_Helper_Form_Element_Text('max', null, 5000, _t('一个sitemap文件中包含主题数'));
         $form->addInput($max);
 
-        $renew = new Typecho_Widget_Helper_Form_Element_Radio('delete', array(0 => '不删除', 1 => '删除'), 1, _t('卸载是否删除数据表'));
+        $renew = new Typecho_Widget_Helper_Form_Element_Radio('delete', array(0 => '不删除', 1 => '删除'), 0, _t('卸载是否删除数据表'));
         $form->addInput($renew);
 
 
