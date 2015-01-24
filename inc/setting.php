@@ -38,11 +38,6 @@ class BaidusubmitSetting
         self::$log_adapter = $type . '_logger';
     }
 
-    public static function logger($who, $action, $result, $moreinfo)
-    {
-        call_user_func(array(__CLASS__,self::$log_adapter."_logger"),func_get_args());
-    }
-
 
     protected static function file_logger($data)
     {
@@ -51,25 +46,45 @@ class BaidusubmitSetting
         if ($data[3] != null) {
             $more = var_export($data[3], 1);
             $log .= "更多:{$more}\n\n";
-        }else{
+        } else {
             $log .= "\n";
         }
         $a = @file_put_contents('/tmp/baidusitemap.log', $log, FILE_APPEND);
     }
 
 
-    public static function checkPasswd(){
-        if(!isset($_GET['p']) || !isset($_GET['m'])){
+    public static function checkPasswd()
+    {
+        if (!isset($_GET['p']) || !isset($_GET['m'])) {
             BaidusubmitSitemap::headerStatus(404);
-            die;
+            return 'Invalid args!';
         }
-        $passwd = self::get_plugin_config()->passwd;
 
-        if($passwd != $_GET['p']){
+        $passwd = self::get_plugin_config()->passwd;
+        if ($passwd != $_GET['p']) {
             BaidusubmitSitemap::headerStatus(404);
-            die;
+            return 'Invalid password!';
         }
+        return true;
     }
 
+    public static function logger($s, $a, $o, $r, $m = null)
+    {
+        $db = Typecho_Db::get();
+
+        if (is_array($m)) {
+            $m = var_export($m, 1);
+        }
+
+        $db->query($db->insert('table.baidusubmit')
+            ->rows(array(
+                'subject' => $s,
+                'action' => $a,
+                'object' => $o,
+                'result' => $r,
+                'more' => $m,
+                'time' => time()
+            )));
+    }
 
 }

@@ -3,9 +3,9 @@
 /**
  * 百度结构化插件
  *
- * @package BaiduSubmit
+ * @package BaiduSubmit(Beta)
  * @author  老高@PHPer
- * @version 0.1
+ * @version 0.2
  * @link http://www.phpgao.com/
  */
 class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
@@ -23,13 +23,13 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         require $current_dir . 'inc/sitemap.php';
         $msg = self::install();
 
-        Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
-        //Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Plugin', 'send_xml');
+        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Action', 'send_add_xml');
+        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->delete = array('BaiduSubmit_Action', 'send_del_xml');
         //检查checksign
         Helper::addRoute('checksign', '/checksign/', 'BaiduSubmit_Action', 'checksign');
         //网站地图
         Helper::addRoute('sitemap_by_phpgao', '/baidusubmit/sitemap', 'BaiduSubmit_Action', 'baidusitemap');
-        return "{$msg} 安装成功";
+        return "{$msg} 安装成功！";
     }
 
     /**
@@ -64,7 +64,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         $passwd = new Typecho_Widget_Helper_Form_Element_Hidden('passwd', NULL, NULL, _t('passwd'));
         $form->addInput($passwd);
 
-        $max = new Typecho_Widget_Helper_Form_Element_Text('max', null, 5000, _t('一个sitemap文件中包含主题数'));
+        $max = new Typecho_Widget_Helper_Form_Element_Text('max', null, 5000, _t('一个sitemap文件中包含主题数'),'0表示所有文章(慎用)');
         $form->addInput($max);
 
         $renew = new Typecho_Widget_Helper_Form_Element_Radio('delete', array(0 => '不删除', 1 => '删除'), 0, _t('卸载是否删除数据表'));
@@ -119,7 +119,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             $data = json_decode($result);
 
             if (isset($data->status) && '0' != $data->status) {
-                BaidusubmitSetting::logger('我', '获取checksign', 'failed', array($config_from_file, $result, $data));
+                BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'failed', array($config_from_file, $result, $data));
             }
             //保存checksign和密码
             $config['checksign'] = $data->checksign;
@@ -135,7 +135,6 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
             #if (isset($output->status) && '0' == $output->status) {
             if (1) {
-
                 $token = $output->token;
                 $config['token'] = $token;
 
@@ -144,7 +143,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
                 $allreturnjson = BaidusubmitSitemap::submitIndex('add', 1, $siteurl, $config['passwd'], $sign);
                 $allresult = json_decode($allreturnjson['body']);
                 if (!isset($allresult->status) || '0' != $allresult->status) {
-                    BaidusubmitSetting::logger('我', '获取提交结果', 'failed', $allreturnjson);
+                    BaidusubmitSetting::logger('我', '获取提交结果', '百度服务器', 'failed', $allreturnjson['body']);
                 }
 
                 //保存token
@@ -160,7 +159,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
                     2003 => 'Checkurl request failed',
                     2008 => 'Checkurl does not belong to siteurl',
                 );
-                BaidusubmitSetting::logger('我', '获取token', 'wrong', $e[$output->status]);
+                BaidusubmitSetting::logger('百度服务器', '返回token', '我', 'wrong', $e[$output->status]);
             } else {
                 BaidusubmitSetting::logger('我', '获取token', 'failed', array($sigurl, $url, $authData));
             }
@@ -208,7 +207,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             }
         }
         $db = Typecho_Db::get();
-        self::logger('I', '安装', '插件', '成功', $msg);
+        self::logger('我', '安装', '插件', '成功', $msg);
     }
 
     public static function logger($s, $a, $o, $r, $m = null)
@@ -225,7 +224,8 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             )));
     }
 
-    public static function uninstall(){
+    public static function uninstall()
+    {
         //删除路由
         Helper::removeRoute('checksign');
         Helper::removeRoute('sitemap_by_phpgao');
@@ -241,16 +241,19 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         BaidusubmitSitemap::submitIndex('del', BaidusubmitSitemap::TYPE_ALL, $siteurl, $passwd, $sign);
         //BaidusubmitSitemap::submitIndex('del', BaidusubmitSitemap::TYPE_INC, $siteurl, $passwd, $sign);
         //获取配置，是否删除数据表
-        if($plugin_config->delete == 1){
+        if ($plugin_config->delete == 1) {
             self::remove_table();
+        } else {
+            self::logger('我', '卸载', '插件', '成功');
         }
 
     }
 
-    public static function remove_table(){
+    public static function remove_table()
+    {
         //删除表
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
-        $db->query("DROP TABLE `".$prefix."baidusubmit`", Typecho_Db::WRITE);
+        $db->query("DROP TABLE `" . $prefix . "baidusubmit`", Typecho_Db::WRITE);
     }
 }

@@ -143,30 +143,30 @@ class BaidusubmitSchemaPost
 
         return
             "<url>\n" .
-                "<loc><![CDATA[{$this->_url}]]></loc>\n" .
-                "<lastmod>{$this->_lastmod}</lastmod>\n" .
-                "<data>\n" .
-                    "<blogposting>\n" .
-                        "<headline><![CDATA[{$this->_title}]]></headline>\n" .
-                        "<url><![CDATA[{$this->_url}]]></url>\n" .
-                        "<articleAuthor>\n" .
-                            "<articleAuthor>\n" .
-                                "<alias><![CDATA[{$this->_author}]]></alias>\n" .
-                            "</articleAuthor>\n" .
-                        "</articleAuthor>\n" .
-                        "<articleBody><![CDATA[{$this->_content}]]></articleBody>\n" .
-                        "<articleTime>{$this->_publishTime}</articleTime>\n" .
-                        "<articleModifiedTime>{$this->_lastmod}</articleModifiedTime>\n" .
-                        "{$keywords}" .
-                        "<articleSection><![CDATA[{$this->_term}]]></articleSection>\n" .
-                        "{$pics}\n" .
-                        "{$video}" .
-                        "{$audio}" .
-                        "{$comment}" .
-                        "<articleCommentCount>{$this->_commentCount}</articleCommentCount>\n" .
-                        "<articleLatestComment>{$this->_latestCommentTime}</articleLatestComment>\n" .
-                    "</blogposting>\n" .
-                "</data>\n" .
+            "<loc><![CDATA[{$this->_url}]]></loc>\n" .
+            "<lastmod>{$this->_lastmod}</lastmod>\n" .
+            "<data>\n" .
+            "<blogposting>\n" .
+            "<headline><![CDATA[{$this->_title}]]></headline>\n" .
+            "<url><![CDATA[{$this->_url}]]></url>\n" .
+            "<articleAuthor>\n" .
+            "<articleAuthor>\n" .
+            "<alias><![CDATA[{$this->_author}]]></alias>\n" .
+            "</articleAuthor>\n" .
+            "</articleAuthor>\n" .
+            "<articleBody><![CDATA[{$this->_content}]]></articleBody>\n" .
+            "<articleTime>{$this->_publishTime}</articleTime>\n" .
+            "<articleModifiedTime>{$this->_lastmod}</articleModifiedTime>\n" .
+            "{$keywords}" .
+            "<articleSection><![CDATA[{$this->_term}]]></articleSection>\n" .
+            "{$pics}\n" .
+            "{$video}" .
+            "{$audio}" .
+            "{$comment}" .
+            "<articleCommentCount>{$this->_commentCount}</articleCommentCount>\n" .
+            "<articleLatestComment>{$this->_latestCommentTime}</articleLatestComment>\n" .
+            "</blogposting>\n" .
+            "</data>\n" .
             "</url>\n";
     }
 }
