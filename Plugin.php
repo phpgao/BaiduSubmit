@@ -254,6 +254,10 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         //删除表
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
-        $db->query("DROP TABLE `" . $prefix . "baidusubmit`", Typecho_Db::WRITE);
+        try{
+            $db->query("DROP TABLE `" . $prefix . "baidusubmit`", Typecho_Db::WRITE);
+        }catch (Typecho_Exception $e){
+
+        }
     }
 }
