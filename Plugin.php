@@ -116,7 +116,8 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             //$curl = new Typecho_Http_Client_Adapter_Curl();
             //去站长平台获取随机串
             $result = BaidusubmitSitemap::httpSend($config_from_file['zzplatform'] . '/getCheckSign?siteurl=' . urlencode($siteurl) . '&sitetype=' . $config_from_file['siteTypeKey']);
-            BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'failed', array($config_from_file, $result, $data));
+
+            BaidusubmitSetting::logger('1', '2', '3', '4', array($config_from_file, $result,$config_from_file['zzplatform'] . '/getCheckSign?siteurl=' . urlencode($siteurl) . '&sitetype=' . $config_from_file['siteTypeKey']));
 
             $data = json_decode($result);
 
@@ -189,7 +190,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
                     `action` varchar(255) COMMENT '动作',
                     `object` varchar(255) COMMENT '对象',
                     `result` varchar(255) COMMENT '结果',
-                    `more` varchar(255) COMMENT '更多信息',
+                    `more` varchar(2000) COMMENT '更多信息',
                     `time` bigint COMMENT '时间',
                     PRIMARY KEY (`id`)
                 )DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT='baidusitemap'";

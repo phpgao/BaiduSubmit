@@ -552,6 +552,7 @@ class BaidusubmitSitemap
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
             $data = curl_exec($ch);
+            file_put_contents('/tmp/baidusitemap.log',$data,FILE_APPEND);
             $status = curl_getinfo($ch);
             $errno = curl_errno($ch);
             curl_close($ch);
@@ -624,6 +625,8 @@ class BaidusubmitSitemap
                 }
             }
             @fclose($fp);
+            file_put_contents('/tmp/baidusitemap.log',$return,FILE_APPEND);
+
             return $return;
         }
     }
