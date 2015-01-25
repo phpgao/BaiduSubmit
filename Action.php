@@ -43,11 +43,11 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         }
 
         $method = strval($_GET['m']);
-        if(in_array($method,array('indexall','indexinc'))){
-        #if (method_exists($this, $method)) {
-            call_user_func_array(array($this, $method),$_REQUEST);
+        if (in_array($method, array('indexall', 'indexinc'))) {
+            #if (method_exists($this, $method)) {
+            call_user_func_array(array($this, $method), $_REQUEST);
             BaidusubmitSetting::logger('外部', '请求', 'sitemap', '成功', $_SERVER['HTTP_USER_AGENT']);
-        }else{
+        } else {
             BaidusubmitSetting::logger($_SERVER['HTTP_USER_AGENT'], '请求', 'sitemap', 'failed', "Wrong param {$method}");
         }
     }
@@ -58,9 +58,9 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         # 默认取设置的个数
         $max_num = BaidusubmitSetting::get_plugin_config()->max;
 
-        if($max_num == 0){
+        if ($max_num == 0) {
             $ids = BaidusubmitSitemap::get_post_id_by_range(1);
-        }else{
+        } else {
             $ids = BaidusubmitSitemap::get_post_id_by_max($max_num);
         }
 
@@ -88,44 +88,56 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         echo '</urlset>';
     }
 
-    public function send_add_xml($a,$b){
+    public function send_add_xml($a, $b)
+    {
 
         require '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'sitemap.php';
         require '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'setting.php';
+
+        $plugin_option = BaidusubmitSetting::get_plugin_config();
+
+        if(0 == $plugin_option->realtime){
+            return 1;
+        }
         $post = $b->next();
-        if($post['status'] != 'publish' || $post['created']>time()) {
+        if ($post['status'] != 'publish' || $post['created'] > time()) {
             BaidusubmitSetting::logger('我', '提交删除', '百度服务器', 'failed', '条件错误');
             return false;
         }
         $id = $post['cid'];
-        if($id){
+        if ($id) {
             $schemas = BaidusubmitSitemap::gen_elenment_by_cid($id);
             $base_xml = $schemas[0]->toXml();
             $content = BaidusubmitSitemap::genPostXml($base_xml);
             $r = BaidusubmitSitemap::sendXml($content, 1);
-            if(false !== $r){
-                BaidusubmitSetting::logger('我','提交更新','百度服务器','success',"文章ID->{$id}" . $r);
-            }else{
-                BaidusubmitSetting::logger('我','提交更新','百度服务器','failed',"文章ID->{$id}" . $r);
+            if (false !== $r) {
+                BaidusubmitSetting::logger('我', '提交更新', '百度服务器', 'success', "文章ID->{$id}" . $r);
+            } else {
+                BaidusubmitSetting::logger('我', '提交更新', '百度服务器', 'failed', "文章ID->{$id}" . $r);
             }
         }
     }
 
-    public function send_del_xml($id,$b){
+    public function send_del_xml($id, $b)
+    {
 
         require_once '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'sitemap.php';
         require_once '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'setting.php';
+        $plugin_option = BaidusubmitSetting::get_plugin_config();
 
-        if($id){
-            debug_print_backtrace();
+        if(0 == $plugin_option->realtime){
+            return 1;
+        }
+
+        if ($id) {
             $schemas = BaidusubmitSitemap::gen_elenment_by_cid($id);
             $base_xml = $schemas[0]->toXml();
             $content = BaidusubmitSitemap::genDeleteXml($base_xml);
             $r = BaidusubmitSitemap::sendXml($content, 2);
-            if(false !== $r){
-                BaidusubmitSetting::logger('我','提交删除','百度服务器','success',"文章ID->{$id}" . $r);
-            }else{
-                BaidusubmitSetting::logger('我','提交删除','百度服务器','failed',"文章ID->{$id}" . $r);
+            if (false !== $r) {
+                BaidusubmitSetting::logger('我', '提交删除', '百度服务器', 'success', "文章ID->{$id}" . $r);
+            } else {
+                BaidusubmitSetting::logger('我', '提交删除', '百度服务器', 'failed', "文章ID->{$id}" . $r);
             }
         }
     }

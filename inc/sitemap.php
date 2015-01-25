@@ -552,7 +552,6 @@ class BaidusubmitSitemap
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
             $data = curl_exec($ch);
-            file_put_contents('/tmp/baidusitemap.log',$data,FILE_APPEND);
             $status = curl_getinfo($ch);
             $errno = curl_errno($ch);
             curl_close($ch);
@@ -625,7 +624,6 @@ class BaidusubmitSitemap
                 }
             }
             @fclose($fp);
-            file_put_contents('/tmp/baidusitemap.log',$return,FILE_APPEND);
 
             return $return;
         }
@@ -647,13 +645,13 @@ class BaidusubmitSitemap
      */
     public static function get_post_id_by_max($max)
     {
-        if($max < 1 ){
+        if ($max < 1) {
             throw new Typecho_Exception('max取值错误');
         }
         $db = Typecho_Db::get();
 
-        $ids = $db->fetchAll($db->select('cid')->from('table.contents')->order('cid',Typecho_Db::SORT_DESC)->limit($max));
-        if(false != $ids){
+        $ids = $db->fetchAll($db->select('cid')->from('table.contents')->order('cid', Typecho_Db::SORT_DESC)->limit($max));
+        if (false != $ids) {
             $last_id = array_pop($ids);
         }
         return self::get_post_id_by_range($last_id['cid']);

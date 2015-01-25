@@ -64,12 +64,14 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         $passwd = new Typecho_Widget_Helper_Form_Element_Hidden('passwd', NULL, NULL, _t('passwd'));
         $form->addInput($passwd);
 
-        $max = new Typecho_Widget_Helper_Form_Element_Text('max', null, 5000, _t('一个sitemap文件中包含主题数'),'0表示所有文章(慎用)');
+        $max = new Typecho_Widget_Helper_Form_Element_Text('max', null, 5000, _t('一个sitemap文件中包含主题数'), '0表示所有文章(慎用)');
         $form->addInput($max);
 
         $renew = new Typecho_Widget_Helper_Form_Element_Radio('delete', array(0 => '不删除', 1 => '删除'), 0, _t('卸载是否删除数据表'));
         $form->addInput($renew);
 
+        $real_time = new Typecho_Widget_Helper_Form_Element_Radio('realtime', array(0 => '非即时', 1 => '即时'), 0, _t('是否即时推送信息'), '即时的意思是发布和删除文章的同时向百度服务器提交');
+        $form->addInput($real_time);
 
     }
 
@@ -121,7 +123,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
             if (isset($data->status) && '0' != $data->status) {
                 BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'failed', array($config_from_file, $result));
-            }else{
+            } else {
                 BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'success', $result);
 
             }
@@ -138,7 +140,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             $output = json_decode($authData);
 
             if (isset($output->status) && '0' == $output->status) {
-            #if (1) {
+                #if (1) {
                 $token = $output->token;
                 $config['token'] = $token;
 
@@ -259,9 +261,9 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         //删除表
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
-        try{
+        try {
             $db->query("DROP TABLE `" . $prefix . "baidusubmit`", Typecho_Db::WRITE);
-        }catch (Typecho_Exception $e){
+        } catch (Typecho_Exception $e) {
 
         }
     }
