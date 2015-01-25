@@ -117,14 +117,12 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             //去站长平台获取随机串
             $result = BaidusubmitSitemap::httpSend($config_from_file['zzplatform'] . '/getCheckSign?siteurl=' . urlencode($siteurl) . '&sitetype=' . $config_from_file['siteTypeKey']);
 
-            BaidusubmitSetting::logger('1', '2', '3', '4', array($config_from_file, $result,$config_from_file['zzplatform'] . '/getCheckSign?siteurl=' . urlencode($siteurl) . '&sitetype=' . $config_from_file['siteTypeKey']));
-
             $data = json_decode($result);
 
             if (isset($data->status) && '0' != $data->status) {
-                BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'failed', array($config_from_file, $result, $data));
+                BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'failed', array($config_from_file, $result));
             }else{
-                BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'success', $data);
+                BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'success', $result);
 
             }
             //保存checksign和密码
@@ -214,6 +212,7 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         }
         $db = Typecho_Db::get();
         self::logger('我', '安装', '插件', '成功', $msg);
+        return $msg;
     }
 
     public static function logger($s, $a, $o, $r, $m = null)
