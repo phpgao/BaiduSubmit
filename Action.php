@@ -46,6 +46,7 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         if(in_array($method,array('indexall','indexinc'))){
         #if (method_exists($this, $method)) {
             call_user_func_array(array($this, $method),$_REQUEST);
+            BaidusubmitSetting::logger('外部', '请求', 'sitemap', '成功', $_SERVER['HTTP_USER_AGENT']);
         }else{
             BaidusubmitSetting::logger($_SERVER['HTTP_USER_AGENT'], '请求', 'sitemap', 'failed', "Wrong param {$method}");
         }

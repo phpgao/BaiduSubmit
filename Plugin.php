@@ -137,8 +137,8 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             $authData = BaidusubmitSitemap::httpSend($sigurl); //去站长平台进行验证
             $output = json_decode($authData);
 
-            #if (isset($output->status) && '0' == $output->status) {
-            if (1) {
+            if (isset($output->status) && '0' == $output->status) {
+            #if (1) {
                 $token = $output->token;
                 $config['token'] = $token;
 
