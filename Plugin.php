@@ -116,10 +116,15 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
             //$curl = new Typecho_Http_Client_Adapter_Curl();
             //去站长平台获取随机串
             $result = BaidusubmitSitemap::httpSend($config_from_file['zzplatform'] . '/getCheckSign?siteurl=' . urlencode($siteurl) . '&sitetype=' . $config_from_file['siteTypeKey']);
+            BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'failed', array($config_from_file, $result, $data));
+
             $data = json_decode($result);
 
             if (isset($data->status) && '0' != $data->status) {
                 BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'failed', array($config_from_file, $result, $data));
+            }else{
+                BaidusubmitSetting::logger('我', '获取checksign', '百度站长', 'success', $data);
+
             }
             //保存checksign和密码
             $config['checksign'] = $data->checksign;

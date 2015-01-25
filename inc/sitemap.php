@@ -496,7 +496,7 @@ class BaidusubmitSitemap
         $zzsite = $config['zzplatform'];
         $submiturl = $zzsite . $zzaction . '?siteurl=' . urlencode($site) . '&indexurl=' . urlencode($indexurl) . '&tokensign=' . urlencode($sign) . '&type=' . $stype . '&resource_name=RDF_Other_Blogposting';
         $ret = BaidusubmitSitemap::httpSend($submiturl);
-        BaidusubmitSetting::logger('我',"{$action} sitemap",'服务器','log',$indexurl);
+        #BaidusubmitSetting::logger('我',"{$action} sitemap",'服务器','log',$indexurl);
         return array(
             'body' => $ret,
             'url' => $submiturl,
