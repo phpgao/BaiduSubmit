@@ -14,25 +14,44 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
 
     public static function activate()
     {
+        $msg = self::install();
+
         //挂载发布文章和页面的接口
-        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Plugin', 'send');
-        Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('BaiduSubmit_Plugin', 'send');
+        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Action', 'send');
+        Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('BaiduSubmit_Action', 'send');
+        Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
 
         //添加网站地图功能
         Helper::addRoute('baidu_sitemap', '/baidu_sitemap.xml', 'BaiduSubmit_Action', 'sitemap');
-        return '插件安装成功，请进入设置填写准入密钥';
+        Helper::addPanel(1, 'BaiduSubmit/Logs.php', '百度结构化日志', '百度结构化日志', 'administrator');
+        Helper::addRoute('baidu_sitemap_advanced', __TYPECHO_ADMIN_DIR__ . 'baidu_sitemap/advanced', 'BaiduSubmit_Action', 'send_all');
+        return $msg . '请进入设置填写接口调用地址';
+    }
+
+    public static function render(){
+        $options = Helper::options();
+        echo '<a href="';
+        $options->adminUrl('baidu_sitemap/advanced');
+        echo '">百度结构化插件</a>';
     }
 
     public static function deactivate()
     {
-        Helper::removeRoute('baidu_sitemap');
-        return '插件卸载成功';
+        $msg = self::uninstall();
+        return $msg . '插件卸载成功';
+    }
+
+    public static function index(){
+        echo 1;
     }
 
     public static function config(Typecho_Widget_Helper_Form $form)
     {
-        //保存接口调用地址
+
         $element = new Typecho_Widget_Helper_Form_Element_Text('api', null, null, _t('接口调用地址'), '请登录百度站长平台获取');
+        $form->addInput($element);
+
+        $element = new Typecho_Widget_Helper_Form_Element_Radio('delete', array(0 => '不删除', 1 => '删除'), 0, _t('卸载是否删除数据表'));
         $form->addInput($element);
     }
 
@@ -40,110 +59,63 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
     {
     }
 
-    /**
-     * 准备数据
-     * @param $contents 文章内容
-     * @param $class 调用接口的类
-     * @throws Typecho_Plugin_Exception
-     */
-    public static function send($contents, $class)
+
+
+    public static function install()
     {
-
-        //如果文章属性为隐藏或滞后发布
-        if ('publish' != $contents['visibility'] || $contents['created'] > time()) {
-            return;
-        }
-
-        //获取系统配置
-        $options = Helper::options();
-
-        //判断是否配置好API
-        if (is_null($options->plugin('BaiduSubmit')->api)) {
-            return;
-        }
-
-        //获取文章类型
-        $type = $contents['type'];
-
-        //获取路由信息
-        $routeExists = (NULL != Typecho_Router::get($type));
-
-        //生成永久连接
-        $path_info = $routeExists ? Typecho_Router::url($type, $contents) : '#';
-        $permalink = Typecho_Common::url($path_info, $options->index);
-
-        //调用post方法
-        self::send_post($permalink, $options);
-    }
-
-    /**
-     * 发送数据
-     * @param $url 准备发送的url
-     * @param $options 系统配置
-     */
-    public static function send_post($url, $options)
-    {
-
-        //获取API
-        $api = $options->plugin('BaiduSubmit')->api;
-
-        //准备数据
-        if (is_array($url)) {
-            $urls = $url;
-        } else {
-            $urls = array($url);
-        }
-
-        $result = array();
-        //错误状态
-        $result['error'] = 1;
-        //提交URL数
-        $result['num'] = count($urls);
-        //返回值
-        $result['return'] = '';
 
         try {
-            //为了保证成功调用，老高先做了判断
-            if (false == Typecho_Http_Client::get()) {
-                throw new Typecho_Plugin_Exception(_t('对不起, 您的主机不支持 php-curl 扩展而且没有打开 allow_url_fopen 功能, 无法正常使用此功能'));
+            return self::addTable();
+        } catch (Typecho_Db_Exception $e) {
+            if ('42S01' == $e->getCode()) {
+                $msg = '数据库已存在!';
+                return $msg;
             }
-
-            //发送请求
-            $http = Typecho_Http_Client::get();
-            $http->setData(implode("\n", $urls));
-            $http->setHeader('Content-Type', 'text/plain');
-            $json = $http->send($api);
-            $return = json_decode($json, 1);
-
-            $result = array();
-            $result['msg'] = "请求成功";
-            $result['return'] = $json;
-
-
-            if (isset($return['success']) || array_key_exists('success', $return)) {
-                $result['num'] = $return['success'];
-                $result['remain'] = $return['remain'];
-                $result['error'] = 0;
-            }
-
-        } catch (Typecho_Plugin_Exception $e) {
-            $result['msg'] = "发送请求时遇到了问题";
         }
-
-        $result['time'] = time();
-
-        self::log($result);
     }
 
-    public static function log($data, $direction = 1)
+    public static function uninstall()
     {
-
-        if ($direction) {
-            $data['direction'] = 'request';
-        } else {
-            $data['direction'] = 'respond';
+        //删除路由
+        Helper::removeRoute('baidu_sitemap');
+        Helper::removeRoute('baidu_sitemap_advanced');
+        Helper::removePanel(1, 'BaiduSubmit/Logs.php');
+        //获取配置，是否删除数据表
+        if (Helper::options()->plugin('BaiduSubmit')->delete == 1) {
+            return self::remove_table();
         }
-
-        file_put_contents('/tmp/php.log', var_export($data, 1) . "\n", FILE_APPEND);
     }
+
+    public static function addTable()
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+        $sql = "CREATE TABLE `{$prefix}baidusubmit` (
+                    `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `subject` varchar(255) COMMENT '主体',
+                    `action` varchar(255) COMMENT '动作',
+                    `object` varchar(255) COMMENT '对象',
+                    `result` varchar(255) COMMENT '结果',
+                    `more` text COMMENT '更多信息',
+                    `time` bigint COMMENT '时间',
+                    PRIMARY KEY (`id`)
+                )DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci";
+        $db->query($sql);
+        return "数据库安装成功！";
+    }
+
+    public static function remove_table()
+    {
+        //删除表
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+        try {
+            $db->query("DROP TABLE `" . $prefix . "baidusubmit`", Typecho_Db::WRITE);
+        } catch (Typecho_Exception $e) {
+            return "删除日志表失败！";
+        }
+        return "删除日志表成功！";
+    }
+
+
 }
