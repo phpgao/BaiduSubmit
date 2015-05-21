@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  *
  * @package BaiduSubmit
  * @author  老高
- * @version 0.4
+ * @version 0.5
  * @link http://www.phpgao.com/typecho_plugin_baidusubmit.html
  */
 class BaiduSubmit_Plugin implements Typecho_Plugin_Interface

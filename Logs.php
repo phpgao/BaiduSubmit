@@ -105,7 +105,7 @@ $group_num = ceil($count / $group_volume);
                                         <td><?php echo $line['subject']; ?></td>
                                         <td><?php echo $line['action']; ?></td>
                                         <td><?php echo $line['object']; ?></td>
-                                        <td><?php echo $line['result']; ?></td>
+                                        <td <?php if($line['result'] == '失败'){?> style="color: #ff0000" <?php }?>><?php echo $line['result']; ?></td>
                                         <td><span class="show-hide">显示</span><span class="org-value" ><pre><?php echo $line['more']; ?></pre></span></td>
                                         <td><?php echo date('Y-m-d H:i:s', $line['time']); ?></td>
                                     </tr>
@@ -130,16 +130,20 @@ include 'table-js.php';
 ?>
 <script>
 $(function(){
-    $('.show-hide').css('color', 'blue');
-    $('.show-hide').css('cursor', 'cursor');
+    var show = $('.show-hide')
+    var pre = $('.org-value')
 
-    $('.org-value').hide();
+    show.css('color', 'blue');
+    show.css('cursor', 'cursor');
+    $('.org-value pre').css('background-color', '#E3FFDA');
 
-    $('.show-hide').on('click', function(){
+    pre.hide();
+
+    show.on('click', function(){
         $(this).hide().parent().find('.org-value').show();
     });
 
-    $('.org-value').on('click', function(){
+    pre.on('click', function(){
         $(this).hide().parent().find('.show-hide').show();
     });
 });
