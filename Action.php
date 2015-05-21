@@ -2,11 +2,28 @@
 
 class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 {
+    //单次提交最大URL数量
+    const VOLUME = 50;
+
     public function action(){}
 
     public static function send_all(){
-        $url = self::gen_all_url();
-        self::post($url);
+
+        set_time_limit(600);
+        $url_array = self::gen_all_url();
+
+        $count = count($url_array);
+
+        $group = ceil($count / self::VOLUME);
+        for($i=1;$i<=$group;$i++){
+            $urls_new[$i] = array_slice($url_array, ($i-1) * self::VOLUME, self::VOLUME);
+        }
+
+        foreach($urls_new as $url){
+            self::post($url);
+        }
+        header('Location: ' . $_SERVER['HTTP_REFERER'], false, 302);
+        exit;
     }
 
     public static function gen_all_url(){
@@ -48,7 +65,6 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
     public static function sitemap(){
         $db = Typecho_Db::get();
         $options = Helper::options();
-        $plugin_config = Helper::options()->plugin('BaiduSubmit');
 
         $bot_list = array(
             'baidu' => '百度',
@@ -226,7 +242,6 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
             $json = $http->send($api);
             $return = json_decode($json, 1);
 
-            $result = array();
             $result['more']['msg'] = "请求成功";
             $result['more']['return'] = $json;
 
@@ -237,15 +252,13 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
                 $result['result'] = '成功';
             }
 
-        } catch (Typecho_Plugin_Exception $e) {
-            $result['more']['msg'] = "发送请求时遇到了问题";
+        } catch (Typecho_Http_Client_Exception $e) {
+            $result['more']['msg'] = "发送请求时遇到了问题:" . $e->getMessage();
         }
 
         self::logger($result);
 
-
-        header('Location: ' . $_SERVER['HTTP_REFERER'], false, 302);
-        exit;
+        return $result;
     }
 
 }

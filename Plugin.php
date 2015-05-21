@@ -19,7 +19,6 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         //挂载发布文章和页面的接口
         Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('BaiduSubmit_Action', 'send');
         Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('BaiduSubmit_Action', 'send');
-        Typecho_Plugin::factory('admin/menu.php')->navBar = array('BaiduSubmit_Plugin', 'render');
 
         //添加网站地图功能
         Helper::addRoute('baidu_sitemap', '/baidu_sitemap.xml', 'BaiduSubmit_Action', 'sitemap');
