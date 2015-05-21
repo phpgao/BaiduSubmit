@@ -3,6 +3,8 @@ include 'common.php';
 include 'header.php';
 include 'menu.php';
 
+date_default_timezone_set('PRC');
+
 $stat = Typecho_Widget::widget('Widget_Stat');
 
 $db = Typecho_Db::get();
