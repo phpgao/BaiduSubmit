@@ -2,144 +2,58 @@
 
 class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 {
+    public function action(){}
 
-    public function __construct()
-    {
-        $this->_dir = '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/';
-        require $this->_dir . 'sitemap.php';
-        require $this->_dir . 'setting.php';
+    public static function sitemap(){
+        $db = Typecho_Db::get();
+        $options = Helper::options();
+        $plugin_config = Helper::options()->plugin('BaiduSubmit');
 
-        define('TYPE_ALL', 1);
-        define('TYPE_INC', 2);
-    }
 
-    public function checksign()
-    {
-        $checksign = $_GET['checksign'];
-        if (!$checksign || strlen($checksign) !== 32) {
-            exit;
+        $pages = $db->fetchAll($db->select()->from('table.contents')
+            ->where('table.contents.status = ?', 'publish')
+            ->where('table.contents.created < ?', $options->gmtTime)
+            ->where('table.contents.type = ?', 'page')
+            ->order('table.contents.created', Typecho_Db::SORT_DESC));
+
+        $articles = $db->fetchAll($db->select()->from('table.contents')
+            ->where('table.contents.status = ?', 'publish')
+            ->where('table.contents.created < ?', $options->gmtTime)
+            ->where('table.contents.type = ?', 'post')
+            ->order('table.contents.created', Typecho_Db::SORT_DESC));
+
+        //changefreq -> always、hourly、daily、weekly、monthly、yearly、never
+        //priority -> 0.0优先级最低、1.0最高
+        header("Content-Type: application/xml");
+        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        echo "<urlset>\n";
+        foreach ($pages AS $page) {
+            $type = $page['type'];
+            $routeExists = (NULL != Typecho_Router::get($type));
+            $page['pathinfo'] = $routeExists ? Typecho_Router::url($type, $page) : '#';
+            $page['permalink'] = Typecho_Common::url($page['pathinfo'], $options->index);
+
+            echo "\t<url>\n";
+            echo "\t\t<loc>" . $page['permalink'] . "</loc>\n";
+            echo "\t\t<lastmod>" . date('Y-m-d', $page['modified']) . "</lastmod>\n";
+            echo "\t\t<changefreq>daily</changefreq>\n";
+            echo "\t\t<priority>0.8</priority>\n";
+            echo "\t</url>\n";
         }
+        foreach ($articles AS $article) {
+            $type = $article['type'];
+            $routeExists = (NULL != Typecho_Router::get($type));
+            $article['pathinfo'] = $routeExists ? Typecho_Router::url($type, $article) : '#';
+            $article['permalink'] = Typecho_Common::url($article['pathinfo'], $options->index);
 
-        $data = Helper::options()->plugin('BaiduSubmit');
-
-        if ($data->checksign == $checksign) {
-            echo $data->checksign;
+            echo "\t<url>\n";
+            echo "\t\t<loc>" . $article['permalink'] . "</loc>\n";
+            echo "\t\t<lastmod>" . date('Y-m-d', $article['modified']) . "</lastmod>\n";
+            echo "\t\t<changefreq>daily</changefreq>\n";
+            echo "\t\t<priority>0.8</priority>\n";
+            echo "\t</url>\n";
         }
-    }
-
-
-    public function action()
-    {
-    }
-
-    public function baidusitemap()
-    {
-
-        $msg = BaidusubmitSetting::checkPasswd();
-
-        if (true !== $msg) {
-            BaidusubmitSetting::logger($_SERVER['HTTP_USER_AGENT'], '请求', 'sitemap', 'failed', $msg);
-            die;
-        }
-
-        $method = strval($_GET['m']);
-        if (in_array($method, array('indexall', 'indexinc'))) {
-            #if (method_exists($this, $method)) {
-            call_user_func_array(array($this, $method), $_REQUEST);
-            BaidusubmitSetting::logger('外部', '请求', 'sitemap', '成功', $_SERVER['HTTP_USER_AGENT']);
-        } else {
-            BaidusubmitSetting::logger($_SERVER['HTTP_USER_AGENT'], '请求', 'sitemap', 'failed', "Wrong param {$method}");
-        }
-    }
-
-
-    protected function indexall()
-    {
-        # 默认取设置的个数
-        $max_num = BaidusubmitSetting::get_plugin_config()->max;
-
-        if ($max_num == 0) {
-            $ids = BaidusubmitSitemap::get_post_id_by_range(1);
-        } else {
-            $ids = BaidusubmitSitemap::get_post_id_by_max($max_num);
-        }
-
-
-        $content = BaidusubmitSitemap::gen_elenment_by_cid($ids);
-
-        $this->print_xml_header();
-        foreach ($content as $v) {
-            echo $v->toXml();
-        }
-
-        $this->print_xml_footer();
-    }
-
-
-    protected function print_xml_header()
-    {
-        header('Content-Type: text/xml; charset=utf-8');
-        echo '<?xml version="1.0" encoding="UTF-8"?><urlset>';
-    }
-
-
-    protected function print_xml_footer()
-    {
-        echo '</urlset>';
-    }
-
-    public function send_add_xml($a, $b)
-    {
-
-        require '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'sitemap.php';
-        require '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'setting.php';
-
-        $plugin_option = BaidusubmitSetting::get_plugin_config();
-
-        if(0 == $plugin_option->realtime){
-            return 1;
-        }
-        $post = $b->next();
-        if ($post['status'] != 'publish' || $post['created'] > time()) {
-            BaidusubmitSetting::logger('我', '提交删除', '百度服务器', 'failed', '条件错误');
-            return false;
-        }
-        $id = $post['cid'];
-        if ($id) {
-            $schemas = BaidusubmitSitemap::gen_elenment_by_cid($id);
-            $base_xml = $schemas[0]->toXml();
-            $content = BaidusubmitSitemap::genPostXml($base_xml);
-            $r = BaidusubmitSitemap::sendXml($content, 1);
-            if (false !== $r) {
-                BaidusubmitSetting::logger('我', '提交更新', '百度服务器', 'success', "文章ID->{$id}" . $r);
-            } else {
-                BaidusubmitSetting::logger('我', '提交更新', '百度服务器', 'failed', "文章ID->{$id}" . $r);
-            }
-        }
-    }
-
-    public function send_del_xml($id, $b)
-    {
-
-        require_once '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'sitemap.php';
-        require_once '.' . __TYPECHO_PLUGIN_DIR__ . '/BaiduSubmit/inc/' . 'setting.php';
-        $plugin_option = BaidusubmitSetting::get_plugin_config();
-
-        if(0 == $plugin_option->realtime){
-            return 1;
-        }
-
-        if ($id) {
-            $schemas = BaidusubmitSitemap::gen_elenment_by_cid($id);
-            $base_xml = $schemas[0]->toXml();
-            $content = BaidusubmitSitemap::genDeleteXml($base_xml);
-            $r = BaidusubmitSitemap::sendXml($content, 2);
-            if (false !== $r) {
-                BaidusubmitSetting::logger('我', '提交删除', '百度服务器', 'success', "文章ID->{$id}" . $r);
-            } else {
-                BaidusubmitSetting::logger('我', '提交删除', '百度服务器', 'failed', "文章ID->{$id}" . $r);
-            }
-        }
+        echo "</urlset>";
     }
 
 }
