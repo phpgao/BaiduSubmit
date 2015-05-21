@@ -7,6 +7,8 @@ $stat = Typecho_Widget::widget('Widget_Stat');
 
 $db = Typecho_Db::get();
 $prefix = $db->getPrefix();
+
+//计算分页
 $pageSize = 20;
 $currentPage = isset($_REQUEST['p']) ? ($_REQUEST['p'] + 0) : 1;
 
@@ -15,10 +17,31 @@ $all = $db->fetchAll($db->select()->from('table.baidusubmit')
 
 $pageCount = ceil( count($all)/$pageSize );
 
-
 $current = $db->fetchAll($db->select()->from('table.baidusubmit')
     ->page($currentPage, $pageSize)
     ->order('table.baidusubmit.time', Typecho_Db::SORT_DESC));
+
+//计算分组
+$options = Helper::options();
+
+$pages = $db->fetchAll($db->select()->from('table.contents')
+    ->where('table.contents.status = ?', 'publish')
+    ->where('table.contents.created < ?', $options->gmtTime)
+    ->where('table.contents.type = ?', 'page')
+    ->order('table.contents.created', Typecho_Db::SORT_DESC));
+
+$articles = $db->fetchAll($db->select()->from('table.contents')
+    ->where('table.contents.status = ?', 'publish')
+    ->where('table.contents.created < ?', $options->gmtTime)
+    ->where('table.contents.type = ?', 'post')
+    ->order('table.contents.created', Typecho_Db::SORT_DESC));
+
+$count = count($pages) + count($articles);
+
+$group_volume = Helper::options()->plugin('BaiduSubmit')->group;
+
+$group_num = ceil($count / $group_volume);
+
 
 ?>
 <div class="main">
@@ -27,14 +50,17 @@ $current = $db->fetchAll($db->select()->from('table.baidusubmit')
         <div class="row typecho-page-main" role="main">
             <div class="col-mb-12 typecho-list">
                 <div class="typecho-list-operate clearfix">
-                    <form action="<?php $options->adminUrl('baidu_sitemap/advanced'); ?>">
+                    <form action="<?php $options->adminUrl('baidu_sitemap/advanced'); ?>" method="POST">
                         <div class="operate">
-
-                                <button type="submit" class="btn btn-s"><?php _e('发送所有URL'); ?></button>
-
+                            <select name="group">
+                                <?php for($i=1;$i<=$group_num;$i++): ?>
+                                    <option value="<?php echo $i; ?>">第<?php echo $i; ?>组</option>
+                                <?php endfor; ?>
+                            </select>
+                            <button type="submit" class="btn btn-s"><?php _e('发送分组URL'); ?></button>
                         </div>
                     </form>
-                    <form method="post" action="<?php $options->adminUrl('extending.php?panel=BaiduSubmit%2FLogs.php'); ?>">
+                    <form method="POST" action="<?php $options->adminUrl('extending.php?panel=BaiduSubmit%2FLogs.php'); ?>">
                         <div class="search" role="search">
 
 
@@ -44,13 +70,6 @@ $current = $db->fetchAll($db->select()->from('table.baidusubmit')
                                 <?php endfor; ?>
                             </select>
 
-                            <select name="category">
-                                <option value=""><?php _e('所有分类'); ?></option>
-                                <?php Typecho_Widget::widget('Widget_Metas_Category_List')->to($category); ?>
-                                <?php while($category->next()): ?>
-                                    <option value="<?php $category->mid(); ?>"<?php if($request->get('category') == $category->mid): ?> selected="true"<?php endif; ?>><?php $category->name(); ?></option>
-                                <?php endwhile; ?>
-                            </select>
                             <button type="submit" class="btn btn-s"><?php _e('筛选'); ?></button>
                             <?php if(isset($request->uid)): ?>
                                 <input type="hidden" value="<?php echo htmlspecialchars($request->get('uid')); ?>" name="uid" />

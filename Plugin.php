@@ -50,6 +50,9 @@ class BaiduSubmit_Plugin implements Typecho_Plugin_Interface
         $element = new Typecho_Widget_Helper_Form_Element_Text('api', null, null, _t('接口调用地址'), '请登录百度站长平台获取');
         $form->addInput($element);
 
+        $element = new Typecho_Widget_Helper_Form_Element_Text('group', null, 15, _t('分组URL数'), '每天最多只能发送50条，请酌情设置');
+        $form->addInput($element);
+
         $element = new Typecho_Widget_Helper_Form_Element_Radio('delete', array(0 => '不删除', 1 => '删除'), 0, _t('卸载是否删除数据表'));
         $form->addInput($element);
     }

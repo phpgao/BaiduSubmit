@@ -2,37 +2,40 @@
 
 class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 {
-    //单次提交最大URL数量
-    const VOLUME = 50;
 
-    public function action(){}
+    public function action()
+    {
+    }
 
-    public static function send_all(){
+    public static function send_all()
+    {
 
-        set_time_limit(600);
+        //获取分组
+        $group_volume = Helper::options()->plugin('BaiduSubmit')->group;
+
+        $group = isset($_REQUEST['group']) ? ($_REQUEST['group'] + 0) : 1;
+
+        //获取所有链接数组
         $url_array = self::gen_all_url();
 
-        $count = count($url_array);
+        $urls = array_slice($url_array, ($group - 1) * $group_volume, $group_volume);
 
-        $group = ceil($count / self::VOLUME);
-        for($i=1;$i<=$group;$i++){
-            $urls_new[$i] = array_slice($url_array, ($i-1) * self::VOLUME, self::VOLUME);
-        }
+        //设置超时
+        set_time_limit(600);
 
-        foreach($urls_new as $url){
-            self::post($url);
-        }
+        self::post($urls, $group);
+
         header('Location: ' . $_SERVER['HTTP_REFERER'], false, 302);
         exit;
     }
 
-    public static function gen_all_url(){
+    public static function gen_all_url()
+    {
 
         $urls = array();
 
         $db = Typecho_Db::get();
         $options = Helper::options();
-        $plugin_config = Helper::options()->plugin('BaiduSubmit');
 
         $pages = $db->fetchAll($db->select()->from('table.contents')
             ->where('table.contents.status = ?', 'publish')
@@ -62,7 +65,8 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         return $urls;
     }
 
-    public static function sitemap(){
+    public static function sitemap()
+    {
         $db = Typecho_Db::get();
         $options = Helper::options();
 
@@ -79,7 +83,7 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 
         $useragent = strtolower($_SERVER['HTTP_USER_AGENT']);
         foreach ($bot_list as $k => $v) {
-            if (strpos($useragent, ($k.'')) !== false) {
+            if (strpos($useragent, ($k . '')) !== false) {
                 $log['subject'] = $v;
                 $log['action'] = '请求';
                 $log['object'] = 'sitemap';
@@ -168,7 +172,7 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 
         //判断是否配置好API
         if (is_null($options->plugin('BaiduSubmit')->api)) {
-            return;
+            throw new Typecho_Plugin_Exception(_t('api未配置'));
         }
 
         //获取文章类型
@@ -188,9 +192,9 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
     /**
      * 发送数据
      * @param $url 准备发送的url
-     * @param $options 系统配置
+     * @param $group 分组信息
      */
-    public static function post($url)
+    public static function post($url, $group=null)
     {
         $options = Helper::options();
 
@@ -204,30 +208,16 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
             $urls = array($url);
         }
 
+        //日志信息
 
-        $result = array();
+        $log['subject'] = '我';
+        $log['action'] = '发送';
+        $log['object'] = 'URL';
 
-        $result['subject'] = '我';
-        $result['action'] = '发送';
 
-        //错误状态
-        $result['result'] = '失败';
-        //url
-        $result['more']['urls'] = $urls;
-        //提交URL数
-        $result['more']['num'] = count($urls);
+        if($group) $log['more']['group'] = $group;
 
-        if($result['more']['num'] == 0){
-            return;
-        }
-        if($result['more']['num'] > 1){
-            $result['object'] = '所有URL';
-        }else{
-            $result['object'] = '单条URL';
-        }
-
-        //返回值
-        $result['more']['return'] = '';
+        $log['more']['url'] = $urls;
 
         try {
             //为了保证成功调用，老高先做了判断
@@ -241,24 +231,19 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
             $http->setHeader('Content-Type', 'text/plain');
             $json = $http->send($api);
             $return = json_decode($json, 1);
-
-            $result['more']['msg'] = "请求成功";
-            $result['more']['return'] = $json;
-
-
-            if (isset($return['success']) || array_key_exists('success', $return)) {
-                $result['more']['num'] = $return['success'];
-                $result['more']['remain'] = $return['remain'];
-                $result['result'] = '成功';
+            $log['more']['info'] = $return;
+            if (isset($return['error'])) {
+                $log['result'] = '失败';
+            } else {
+                $log['result'] = '成功';
             }
 
-        } catch (Typecho_Http_Client_Exception $e) {
-            $result['more']['msg'] = "发送请求时遇到了问题:" . $e->getMessage();
+        } catch (Typecho_Exception $e) {
+            $log['more']['info'] = $e->getMessage();
+            $log['result'] = '失败';
         }
 
-        self::logger($result);
-
-        return $result;
+        self::logger($log);
     }
 
 }
