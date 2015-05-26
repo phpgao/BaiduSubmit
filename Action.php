@@ -58,6 +58,19 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         foreach ($articles AS $article) {
             $type = $article['type'];
             $routeExists = (NULL != Typecho_Router::get($type));
+            if(!is_null($routeExists)){
+                $article['categories'] = $db->fetchAll($db->select()->from('table.metas')
+                    ->join('table.relationships', 'table.relationships.mid = table.metas.mid')
+                    ->where('table.relationships.cid = ?', $article['cid'])
+                    ->where('table.metas.type = ?', 'category')
+                    ->order('table.metas.order', Typecho_Db::SORT_ASC));
+                $article['category'] = urlencode(current(Typecho_Common::arrayFlatten($article['categories'], 'slug')));
+                $article['slug'] = urlencode($article['slug']);
+                $article['date'] = new Typecho_Date($article['created']);
+                $article['year'] = $article['date']->year;
+                $article['month'] = $article['date']->month;
+                $article['day'] = $article['date']->day;
+            }
             $article['pathinfo'] = $routeExists ? Typecho_Router::url($type, $article) : '#';
             $urls[] = Typecho_Common::url($article['pathinfo'], $options->index);
         }
