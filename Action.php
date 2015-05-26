@@ -124,6 +124,17 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         }
         foreach ($articles AS $article) {
             $type = $article['type'];
+            $article['categories'] = $db->fetchAll($db->select()->from('table.metas')
+                ->join('table.relationships', 'table.relationships.mid = table.metas.mid')
+                ->where('table.relationships.cid = ?', $article['cid'])
+                ->where('table.metas.type = ?', 'category')
+                ->order('table.metas.order', Typecho_Db::SORT_ASC));
+            $article['category'] = urlencode(current(Typecho_Common::arrayFlatten($article['categories'], 'slug')));
+            $article['slug'] = urlencode($article['slug']);
+            $article['date'] = new Typecho_Date($article['created']);
+            $article['year'] = $article['date']->year;
+            $article['month'] = $article['date']->month;
+            $article['day'] = $article['date']->day;
             $routeExists = (NULL != Typecho_Router::get($type));
             $article['pathinfo'] = $routeExists ? Typecho_Router::url($type, $article) : '#';
             $article['permalink'] = Typecho_Common::url($article['pathinfo'], $options->index);
@@ -180,6 +191,22 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
 
         //获取路由信息
         $routeExists = (NULL != Typecho_Router::get($type));
+
+        if(!is_null($routeExists)){
+            $db = Typecho_Db::get();
+            $contents['cid'] = $class->cid;
+            $contents['categories'] = $db->fetchAll($db->select()->from('table.metas')
+                ->join('table.relationships', 'table.relationships.mid = table.metas.mid')
+                ->where('table.relationships.cid = ?', $contents['cid'])
+                ->where('table.metas.type = ?', 'category')
+                ->order('table.metas.order', Typecho_Db::SORT_ASC));
+            $contents['category'] = urlencode(current(Typecho_Common::arrayFlatten($contents['categories'], 'slug')));
+            $contents['slug'] = urlencode($contents['slug']);
+            $contents['date'] = new Typecho_Date($contents['created']);
+            $contents['year'] = $contents['date']->year;
+            $contents['month'] = $contents['date']->month;
+            $contents['day'] = $contents['date']->day;
+        }
 
         //生成永久连接
         $path_info = $routeExists ? Typecho_Router::url($type, $contents) : '#';
