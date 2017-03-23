@@ -121,7 +121,7 @@ class BaiduSubmit_Action extends Typecho_Widget implements Widget_Interface_Do
         //priority -> 0.0优先级最低、1.0最高
         header("Content-Type: application/xml");
         echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-        echo "<urlset>\n";
+        echo "<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>\n";
         foreach ($pages AS $page) {
             $type = $page['type'];
             $routeExists = (NULL != Typecho_Router::get($type));
